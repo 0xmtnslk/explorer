@@ -444,76 +444,131 @@ const amount = computed({
       </div>
     </div>
 
-    <!-- Active Proposals -->
+    <!-- Active Proposals - Modern Design -->
     <div
       v-if="blockchain.supportModule('governance')"
-      class="rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 overflow-hidden"
+      class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700/50 shadow-sm"
     >
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200/50 dark:border-gray-700/50">
-        <div class="flex items-center gap-3">
-          <div class="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-emerald-500/10">
-            <Icon icon="mdi:vote" class="text-xl text-primary" />
+      <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-500/5 to-red-500/5 dark:from-orange-500/10 dark:to-red-500/10 rounded-full blur-3xl"></div>
+      <div class="relative flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-700/50">
+        <div class="flex items-center gap-4">
+          <div class="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 shadow-lg shadow-orange-500/20">
+            <Icon icon="mdi:vote" class="text-2xl text-white" />
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('index.active_proposals') }}</h3>
+          <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ $t('index.active_proposals') }}</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Participate in governance decisions</p>
+          </div>
         </div>
-        <RouterLink :to="`/${chain}/gov`" class="text-sm text-primary hover:underline font-medium">
+        <RouterLink :to="`/${chain}/gov`" class="flex items-center gap-1 px-4 py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 font-medium text-sm transition-all">
           View All
+          <Icon icon="mdi:arrow-right" />
         </RouterLink>
       </div>
-      <div class="p-5">
+      <div class="p-6">
         <ProposalListItem :proposals="store?.proposals" />
       </div>
-      <div class="pb-8 text-center text-gray-500" v-if="store.proposals?.proposals?.length === 0">
-        {{ $t('index.no_active_proposals') }}
+      <div v-if="store.proposals?.proposals?.length === 0" class="pb-8 flex flex-col items-center justify-center text-center">
+        <div class="p-4 rounded-full bg-gray-100 dark:bg-gray-700/50 mb-3">
+          <Icon icon="mdi:vote-outline" class="text-4xl text-gray-400" />
+        </div>
+        <p class="text-gray-500 dark:text-gray-400">{{ $t('index.no_active_proposals') }}</p>
       </div>
     </div>
 
-    <!-- Wallet Section -->
-    <div class="rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200/50 dark:border-gray-700/50">
-        <div class="flex items-center gap-3">
-          <div class="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-emerald-500/10">
-            <Icon icon="mdi:wallet" class="text-xl text-primary" />
+    <!-- Wallet Section - Modern Design -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700/50 shadow-sm">
+      <div class="absolute top-0 left-0 w-48 h-48 bg-gradient-to-br from-primary/5 to-emerald-500/5 dark:from-primary/10 dark:to-emerald-500/10 rounded-full blur-3xl"></div>
+      
+      <div class="relative flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-700/50">
+        <div class="flex items-center gap-4">
+          <div class="p-3 rounded-xl bg-gradient-to-br from-primary to-emerald-500 shadow-lg shadow-primary/20">
+            <Icon icon="mdi:wallet" class="text-2xl text-white" />
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate max-w-[300px]">
-            {{ walletStore.currentAddress || 'Not Connected' }}
-          </h3>
+          <div>
+            <h3 v-if="walletStore.currentAddress" class="text-lg font-bold text-gray-900 dark:text-white truncate max-w-[300px]">
+              {{ walletStore.currentAddress.slice(0, 12) }}...{{ walletStore.currentAddress.slice(-8) }}
+            </h3>
+            <div v-else class="flex items-center gap-2">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white">Wallet</h3>
+              <span class="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Not Connected</span>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Your portfolio overview</p>
+          </div>
         </div>
         <RouterLink
           v-if="walletStore.currentAddress"
-          class="text-sm text-primary hover:underline font-medium"
+          class="flex items-center gap-1 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-medium text-sm transition-all"
           :to="`/${chain}/account/${walletStore.currentAddress}`"
-        >{{ $t('index.more') }}</RouterLink>
+        >
+          {{ $t('index.more') }}
+          <Icon icon="mdi:arrow-right" />
+        </RouterLink>
       </div>
       
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-5">
-        <div class="rounded-xl bg-gradient-to-br from-blue-500/5 to-primary/5 border border-gray-200/50 dark:border-gray-700/50 p-4">
-          <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">{{ $t('account.balance') }}</div>
-          <div class="text-lg font-bold text-gray-900 dark:text-white">
-            {{ format.formatToken(walletStore.balanceOfStakingToken) }}
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-primary/5 dark:from-blue-500/10 dark:to-primary/5 border border-blue-100 dark:border-blue-500/20 p-5 group hover:shadow-lg hover:shadow-blue-500/5 transition-all">
+          <div class="absolute -top-4 -right-4 w-16 h-16 bg-blue-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+          <div class="relative">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="p-1.5 rounded-lg bg-blue-500/20">
+                <Icon icon="mdi:wallet-outline" class="text-blue-600 dark:text-blue-400" />
+              </div>
+              <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ $t('account.balance') }}</span>
+            </div>
+            <div class="text-xl font-bold text-gray-900 dark:text-white">
+              {{ format.formatToken(walletStore.balanceOfStakingToken) }}
+            </div>
+            <div class="text-sm font-medium" :class="color">${{ format.tokenValue(walletStore.balanceOfStakingToken) }}</div>
           </div>
-          <div class="text-sm" :class="color">${{ format.tokenValue(walletStore.balanceOfStakingToken) }}</div>
         </div>
-        <div class="rounded-xl bg-gradient-to-br from-emerald-500/5 to-green-500/5 border border-gray-200/50 dark:border-gray-700/50 p-4">
-          <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">{{ $t('module.staking') }}</div>
-          <div class="text-lg font-bold text-gray-900 dark:text-white">
-            {{ format.formatToken(walletStore.stakingAmount) }}
+        
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-green-500/5 dark:from-emerald-500/10 dark:to-green-500/5 border border-emerald-100 dark:border-emerald-500/20 p-5 group hover:shadow-lg hover:shadow-emerald-500/5 transition-all">
+          <div class="absolute -top-4 -right-4 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+          <div class="relative">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="p-1.5 rounded-lg bg-emerald-500/20">
+                <Icon icon="mdi:lock-outline" class="text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ $t('module.staking') }}</span>
+            </div>
+            <div class="text-xl font-bold text-gray-900 dark:text-white">
+              {{ format.formatToken(walletStore.stakingAmount) }}
+            </div>
+            <div class="text-sm font-medium" :class="color">${{ format.tokenValue(walletStore.stakingAmount) }}</div>
           </div>
-          <div class="text-sm" :class="color">${{ format.tokenValue(walletStore.stakingAmount) }}</div>
         </div>
-        <div class="rounded-xl bg-gradient-to-br from-yellow-500/5 to-orange-500/5 border border-gray-200/50 dark:border-gray-700/50 p-4">
-          <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">{{ $t('index.reward') }}</div>
-          <div class="text-lg font-bold text-gray-900 dark:text-white">
-            {{ format.formatToken(walletStore.rewardAmount) }}
+        
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/5 border border-amber-100 dark:border-amber-500/20 p-5 group hover:shadow-lg hover:shadow-amber-500/5 transition-all">
+          <div class="absolute -top-4 -right-4 w-16 h-16 bg-amber-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+          <div class="relative">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="p-1.5 rounded-lg bg-amber-500/20">
+                <Icon icon="mdi:gift-outline" class="text-amber-600 dark:text-amber-400" />
+              </div>
+              <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ $t('index.reward') }}</span>
+            </div>
+            <div class="text-xl font-bold text-gray-900 dark:text-white">
+              {{ format.formatToken(walletStore.rewardAmount) }}
+            </div>
+            <div class="text-sm font-medium" :class="color">${{ format.tokenValue(walletStore.rewardAmount) }}</div>
           </div>
-          <div class="text-sm" :class="color">${{ format.tokenValue(walletStore.rewardAmount) }}</div>
         </div>
-        <div class="rounded-xl bg-gradient-to-br from-purple-500/5 to-pink-500/5 border border-gray-200/50 dark:border-gray-700/50 p-4">
-          <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">{{ $t('index.unbonding') }}</div>
-          <div class="text-lg font-bold text-gray-900 dark:text-white">
-            {{ format.formatToken(walletStore.unbondingAmount) }}
+        
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-pink-500/5 dark:from-purple-500/10 dark:to-pink-500/5 border border-purple-100 dark:border-purple-500/20 p-5 group hover:shadow-lg hover:shadow-purple-500/5 transition-all">
+          <div class="absolute -top-4 -right-4 w-16 h-16 bg-purple-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+          <div class="relative">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="p-1.5 rounded-lg bg-purple-500/20">
+                <Icon icon="mdi:timer-sand" class="text-purple-600 dark:text-purple-400" />
+              </div>
+              <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ $t('index.unbonding') }}</span>
+            </div>
+            <div class="text-xl font-bold text-gray-900 dark:text-white">
+              {{ format.formatToken(walletStore.unbondingAmount) }}
+            </div>
+            <div class="text-sm font-medium" :class="color">${{ format.tokenValue(walletStore.unbondingAmount) }}</div>
           </div>
-          <div class="text-sm" :class="color">${{ format.tokenValue(walletStore.unbondingAmount) }}</div>
         </div>
       </div>
 
