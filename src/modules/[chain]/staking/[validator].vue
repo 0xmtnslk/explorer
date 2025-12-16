@@ -391,10 +391,15 @@ const getUptimeColor = (value: number | null) => {
             <div
               v-for="(block, idx) in liveBlocks"
               :key="block.height"
-              class="aspect-square rounded-[2px] transition-all duration-200 cursor-pointer hover:scale-150 hover:z-10"
+              class="group relative aspect-square rounded-[2px] transition-all duration-200 cursor-pointer hover:scale-150 hover:z-10"
               :class="block.signed ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-red-500 hover:bg-red-400'"
-              :title="'#' + block.height + (block.signed ? ' Signed' : ' Missed')"
-            ></div>
+            >
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded-md bg-gray-900 dark:bg-gray-700 text-white text-[10px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 shadow-lg">
+                <span class="text-gray-400">#</span>{{ block.height }}
+                <span class="ml-1" :class="block.signed ? 'text-emerald-400' : 'text-red-400'">{{ block.signed ? 'Signed' : 'Missed' }}</span>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+              </div>
+            </div>
             <div
               v-for="i in Math.max(0, 100 - liveBlocks.length)"
               :key="'empty-' + i"
