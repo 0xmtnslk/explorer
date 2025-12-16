@@ -96,7 +96,20 @@ npm run dev
 
 ## Deployment
 
-Build for production:
+### Vercel Deployment
+
+This project is configured for Vercel deployment with `vercel.json`:
+
+1. Connect your GitHub repository to Vercel
+2. Vercel will auto-detect Vite framework
+3. Build settings (auto-configured):
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Framework: Vite
+
+SPA routing is configured to redirect all routes to `index.html`.
+
+### Manual Build
 
 ```bash
 npm run build
@@ -109,3 +122,5 @@ Output will be in the `dist/` directory for static hosting.
 - CORS warnings for CoinGecko API calls are expected in local development
 - External blockchain API endpoints (like itrocket.net) may have rate limits
 - Dark/Light mode is supported via theme switcher
+- Account page features DonutChart for portfolio visualization with side-by-side asset cards
+- Validator detail page shows live block signing history (100 blocks)
