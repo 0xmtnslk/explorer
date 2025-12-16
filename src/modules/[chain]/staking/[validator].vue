@@ -2,6 +2,7 @@
 import { parseCoins } from '@cosmjs/stargate';
 import {
   useBankStore,
+  useBaseStore,
   useBlockchain,
   useDistributionStore,
   useFormatter,
@@ -30,6 +31,7 @@ const props = defineProps(['validator', 'chain']);
 
 const staking = useStakingStore();
 const blockchain = useBlockchain();
+const baseStore = useBaseStore();
 const format = useFormatter();
 const dialog = useTxDialog();
 const page = new PageRequest();
@@ -55,6 +57,8 @@ const signingInfo = ref({} as Record<string, SigningInfo>);
 const uptime = ref<number | null>(null);
 const showAllTxs = ref(false);
 const showAllEvents = ref(false);
+const liveBlocks = ref<{ height: string; signed: boolean }[]>([]);
+const validatorBase64 = ref('');
 
 addresses.value.account = operatorAddressToAccount(validator);
 
@@ -85,14 +89,46 @@ const calculateUptime = () => {
     try {
       const hex = consensusPubkeyToHexAddress(v.value.consensus_pubkey);
       const base64 = toBase64(fromHex(hex));
+      validatorBase64.value = base64;
       const signing = signingInfo.value[base64];
       const window = Number(slashingParam.value.signed_blocks_window || 0);
       if (signing && window > 0) {
         uptime.value = ((window - Number(signing.missed_blocks_counter)) / window) * 100;
       }
+      initLiveBlocks();
     } catch (e) {}
   }
 };
+
+const initLiveBlocks = () => {
+  if (!validatorBase64.value) return;
+  const blocks: { height: string; signed: boolean }[] = [];
+  baseStore.recents?.forEach((b) => {
+    const sig = b.block?.last_commit?.signatures?.find((s: any) => s.validator_address === validatorBase64.value);
+    blocks.push({
+      height: b.block?.header?.height || '0',
+      signed: !!sig && sig.block_id_flag === 'BLOCK_ID_FLAG_COMMIT'
+    });
+  });
+  liveBlocks.value = blocks.slice(-20);
+};
+
+baseStore.$subscribe((_, state) => {
+  if (validatorBase64.value && state.recents?.length > 0) {
+    const latestBlock = state.recents[state.recents.length - 1];
+    if (latestBlock?.block?.header?.height) {
+      const exists = liveBlocks.value.find(b => b.height === latestBlock.block.header.height);
+      if (!exists) {
+        const sig = latestBlock.block?.last_commit?.signatures?.find((s: any) => s.validator_address === validatorBase64.value);
+        liveBlocks.value.push({
+          height: latestBlock.block.header.height,
+          signed: !!sig && sig.block_id_flag === 'BLOCK_ID_FLAG_COMMIT'
+        });
+        if (liveBlocks.value.length > 20) liveBlocks.value.shift();
+      }
+    }
+  }
+});
 
 const apr = computed(() => {
   const rate = Number(v.value.commission?.commission_rates.rate || 0);
@@ -236,7 +272,8 @@ function mapDelegators(messages: any[]) {
 
 const displayedTxs = computed(() => {
   const allTxs = txs.value.tx_responses || [];
-  return showAllTxs.value ? allTxs : allTxs.slice(0, 5);
+  const reversedTxs = [...allTxs].reverse();
+  return showAllTxs.value ? reversedTxs : reversedTxs.slice(0, 5);
 });
 
 const displayedEvents = computed(() => {
@@ -288,8 +325,25 @@ const getUptimeColor = (value: number | null) => {
             </div>
           </div>
 
-          <!-- Right: Action Button -->
-          <div class="flex items-start lg:ml-auto">
+          <!-- Right: Live Blocks & Action Button -->
+          <div class="flex flex-col items-end gap-4 lg:ml-auto">
+            <!-- Live Uptime Blocks -->
+            <div v-if="liveBlocks.length > 0" class="flex flex-col items-end">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs text-gray-500 dark:text-gray-400">Live Blocks</span>
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              </div>
+              <div class="flex gap-0.5">
+                <div
+                  v-for="(block, idx) in liveBlocks"
+                  :key="block.height"
+                  class="w-3 h-6 rounded-sm transition-all duration-300"
+                  :class="block.signed ? 'bg-emerald-500' : 'bg-red-500'"
+                  :title="'Block #' + block.height + (block.signed ? ' - Signed' : ' - Missed')"
+                  :style="{ animationDelay: idx * 50 + 'ms' }"
+                ></div>
+              </div>
+            </div>
             <button
               class="px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-emerald-600 text-white font-semibold hover:from-primary/90 hover:to-emerald-600/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
               @click="dialog.open('delegate', { validator_address: v.operator_address })"
