@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { useBlockchain, useFormatter, useStakingStore, useTxDialog } from '@/stores';
 import DynamicComponent from '@/components/dynamic/DynamicComponent.vue';
+import DonutChart from '@/components/charts/DonutChart.vue';
 import { computed, ref } from '@vue/reactivity';
 import { onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
@@ -61,6 +62,13 @@ const totalAmount = computed(() => {
   const cat = totalAmountByCategory.value;
   return cat.balance + cat.delegation + cat.reward + cat.unbonding;
 });
+
+const chartData = computed(() => {
+  const cat = totalAmountByCategory.value;
+  return [cat.balance, cat.delegation, cat.reward, cat.unbonding];
+});
+
+const chartLabels = ['Available', 'Staked', 'Rewards', 'Unbonding'];
 
 const totalValue = computed(() => {
   let value = 0;
@@ -208,62 +216,7 @@ const shortenAddress = (addr: string) => {
       </div>
     </div>
 
-    <!-- Asset Summary Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-            <Icon icon="mdi:wallet" class="text-xl text-blue-500" />
-          </div>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Available</span>
-        </div>
-        <div class="text-lg font-bold text-gray-900 dark:text-white">
-          {{ format.formatToken2({ amount: String(totalAmountByCategory.balance), denom: stakingStore.params.bond_denom }) }}
-        </div>
-        <div class="text-xs text-gray-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(totalAmountByCategory.balance), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
-      </div>
-
-      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-            <Icon icon="mdi:lock" class="text-xl text-amber-500" />
-          </div>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Staked</span>
-        </div>
-        <div class="text-lg font-bold text-gray-900 dark:text-white">
-          {{ format.formatToken2({ amount: String(totalAmountByCategory.delegation), denom: stakingStore.params.bond_denom }) }}
-        </div>
-        <div class="text-xs text-gray-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(totalAmountByCategory.delegation), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
-      </div>
-
-      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-            <Icon icon="mdi:gift" class="text-xl text-emerald-500" />
-          </div>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Rewards</span>
-        </div>
-        <div class="text-lg font-bold text-emerald-500">
-          {{ format.formatToken2({ amount: String(Math.floor(totalAmountByCategory.reward)), denom: stakingStore.params.bond_denom }) }}
-        </div>
-        <div class="text-xs text-gray-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(totalAmountByCategory.reward), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
-      </div>
-
-      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-            <Icon icon="mdi:clock-outline" class="text-xl text-red-500" />
-          </div>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Unbonding</span>
-        </div>
-        <div class="text-lg font-bold text-gray-900 dark:text-white">
-          {{ format.formatToken2({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }) }}
-        </div>
-        <div class="text-xs text-gray-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
-      </div>
-    </div>
-
-    <!-- Assets Detail -->
+    <!-- Assets Section with Chart -->
     <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
       <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
         <div class="flex items-center justify-between">
@@ -271,69 +224,157 @@ const shortenAddress = (addr: string) => {
             <div class="p-2.5 rounded-xl bg-gradient-to-br from-primary to-emerald-500">
               <Icon icon="mdi:chart-pie" class="text-xl text-white" />
             </div>
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Asset Breakdown</h2>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Portfolio Overview</h2>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-gray-500 dark:text-gray-400">Total Value</div>
+            <div class="text-xl font-bold text-primary">${{ format.formatNumber(totalValue, '0,0.00') }}</div>
           </div>
         </div>
       </div>
-      <div class="p-6 space-y-3">
-        <div v-for="(balanceItem, index) in balances" :key="'bal-'+index" class="flex items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mr-4">
+      
+      <div class="p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Donut Chart -->
+          <div class="lg:col-span-1 flex items-center justify-center">
+            <div class="w-full max-w-[200px]">
+              <DonutChart :series="chartData" :labels="chartLabels" />
+            </div>
+          </div>
+          
+          <!-- Asset Cards Grid -->
+          <div class="lg:col-span-2 grid grid-cols-2 gap-4">
+            <!-- Available -->
+            <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-700/30 p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <Icon icon="mdi:wallet" class="text-lg text-blue-500" />
+                </div>
+                <span class="text-sm font-medium text-blue-700 dark:text-blue-400">Available</span>
+              </div>
+              <div class="text-lg font-bold text-gray-900 dark:text-white">
+                {{ format.formatToken2({ amount: String(totalAmountByCategory.balance), denom: stakingStore.params.bond_denom }) }}
+              </div>
+              <div class="text-xs text-blue-600 dark:text-blue-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(totalAmountByCategory.balance), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
+            </div>
+
+            <!-- Staked -->
+            <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 border border-amber-200/50 dark:border-amber-700/30 p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                  <Icon icon="mdi:lock" class="text-lg text-amber-500" />
+                </div>
+                <span class="text-sm font-medium text-amber-700 dark:text-amber-400">Staked</span>
+              </div>
+              <div class="text-lg font-bold text-gray-900 dark:text-white">
+                {{ format.formatToken2({ amount: String(totalAmountByCategory.delegation), denom: stakingStore.params.bond_denom }) }}
+              </div>
+              <div class="text-xs text-amber-600 dark:text-amber-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(totalAmountByCategory.delegation), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
+            </div>
+
+            <!-- Rewards -->
+            <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-800/10 border border-emerald-200/50 dark:border-emerald-700/30 p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <Icon icon="mdi:gift" class="text-lg text-emerald-500" />
+                </div>
+                <span class="text-sm font-medium text-emerald-700 dark:text-emerald-400">Rewards</span>
+              </div>
+              <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                {{ format.formatToken2({ amount: String(Math.floor(totalAmountByCategory.reward)), denom: stakingStore.params.bond_denom }) }}
+              </div>
+              <div class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(totalAmountByCategory.reward), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
+            </div>
+
+            <!-- Unbonding -->
+            <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-800/10 border border-red-200/50 dark:border-red-700/30 p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                  <Icon icon="mdi:clock-outline" class="text-lg text-red-500" />
+                </div>
+                <span class="text-sm font-medium text-red-700 dark:text-red-400">Unbonding</span>
+              </div>
+              <div class="text-lg font-bold text-gray-900 dark:text-white">
+                {{ format.formatToken2({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }) }}
+              </div>
+              <div class="text-xs text-red-600 dark:text-red-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Asset Details - Horizontal Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Balance Cards -->
+      <div v-for="(balanceItem, index) in balances" :key="'bal-'+index" class="relative overflow-hidden rounded-xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4 hover:shadow-lg transition-shadow">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
             <Icon icon="mdi:circle-multiple" class="text-xl text-blue-500" />
           </div>
           <div class="flex-1">
+            <div class="text-xs text-gray-500 dark:text-gray-400">Available</div>
             <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ format.formatToken(balanceItem) }}</div>
-            <div class="text-xs text-gray-500">Available Balance</div>
-          </div>
-          <div class="text-right">
-            <div class="text-sm font-semibold text-primary">${{ format.tokenValue(balanceItem) }}</div>
-            <div class="text-xs text-gray-400">{{ format.calculatePercent(balanceItem.amount, totalAmount) }}</div>
           </div>
         </div>
+        <div class="flex items-center justify-between">
+          <span class="text-lg font-bold text-primary">${{ format.tokenValue(balanceItem) }}</span>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">{{ format.calculatePercent(balanceItem.amount, totalAmount) }}</span>
+        </div>
+      </div>
 
-        <div v-for="(delegationItem, index) in delegations" :key="'del-'+index" class="flex items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mr-4">
+      <!-- Delegation Cards -->
+      <div v-for="(delegationItem, index) in delegations" :key="'del-'+index" class="relative overflow-hidden rounded-xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4 hover:shadow-lg transition-shadow">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
             <Icon icon="mdi:lock" class="text-xl text-amber-500" />
           </div>
           <div class="flex-1">
-            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ format.formatToken(delegationItem?.balance) }}</div>
-            <div class="text-xs text-gray-500">
+            <div class="text-xs text-gray-500 dark:text-gray-400">
               <RouterLink :to="`/${chain}/staking/${delegationItem.delegation.validator_address}`" class="text-primary hover:underline">
                 {{ format.validatorFromBech32(delegationItem.delegation.validator_address) || 'Validator' }}
               </RouterLink>
             </div>
-          </div>
-          <div class="text-right">
-            <div class="text-sm font-semibold text-primary">${{ format.tokenValue(delegationItem?.balance) }}</div>
-            <div class="text-xs text-gray-400">{{ format.calculatePercent(delegationItem?.balance?.amount, totalAmount) }}</div>
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ format.formatToken(delegationItem?.balance) }}</div>
           </div>
         </div>
+        <div class="flex items-center justify-between">
+          <span class="text-lg font-bold text-primary">${{ format.tokenValue(delegationItem?.balance) }}</span>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">{{ format.calculatePercent(delegationItem?.balance?.amount, totalAmount) }}</span>
+        </div>
+      </div>
 
-        <div v-for="(rewardItem, index) in rewards.total" :key="'rew-'+index" class="flex items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center mr-4">
+      <!-- Reward Cards -->
+      <div v-for="(rewardItem, index) in rewards.total" :key="'rew-'+index" class="relative overflow-hidden rounded-xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4 hover:shadow-lg transition-shadow">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
             <Icon icon="mdi:gift" class="text-xl text-emerald-500" />
           </div>
           <div class="flex-1">
+            <div class="text-xs text-gray-500 dark:text-gray-400">Pending Rewards</div>
             <div class="text-sm font-semibold text-emerald-500">{{ format.formatToken(rewardItem) }}</div>
-            <div class="text-xs text-gray-500">Pending Rewards</div>
-          </div>
-          <div class="text-right">
-            <div class="text-sm font-semibold text-primary">${{ format.tokenValue(rewardItem) }}</div>
-            <div class="text-xs text-gray-400">{{ format.calculatePercent(rewardItem.amount, totalAmount) }}</div>
           </div>
         </div>
+        <div class="flex items-center justify-between">
+          <span class="text-lg font-bold text-primary">${{ format.tokenValue(rewardItem) }}</span>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">{{ format.calculatePercent(rewardItem.amount, totalAmount) }}</span>
+        </div>
+      </div>
 
-        <div v-if="unbondingTotal > 0" class="flex items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center mr-4">
+      <!-- Unbonding Card -->
+      <div v-if="unbondingTotal > 0" class="relative overflow-hidden rounded-xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4 hover:shadow-lg transition-shadow">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
             <Icon icon="mdi:clock-outline" class="text-xl text-red-500" />
           </div>
           <div class="flex-1">
+            <div class="text-xs text-gray-500 dark:text-gray-400">Unbonding</div>
             <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ format.formatToken({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }) }}</div>
-            <div class="text-xs text-gray-500">Unbonding</div>
           </div>
-          <div class="text-right">
-            <div class="text-sm font-semibold text-primary">${{ format.tokenValue({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }) }}</div>
-            <div class="text-xs text-gray-400">{{ format.calculatePercent(unbondingTotal, totalAmount) }}</div>
-          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-lg font-bold text-primary">${{ format.tokenValue({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }) }}</span>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">{{ format.calculatePercent(unbondingTotal, totalAmount) }}</span>
         </div>
       </div>
     </div>
