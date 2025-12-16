@@ -17,6 +17,11 @@ const stakingStore = useStakingStore();
 const chainStore = useBlockchain();
 
 const votesTab = ref<'validators' | 'users'>('validators');
+const searchYes = ref('');
+const searchNo = ref('');
+const searchVeto = ref('');
+const searchAbstain = ref('');
+const searchPending = ref('');
 
 store.fetchProposal(props.proposal_id).then((res) => {
   let proposalDetail = reactive(res.proposal);
@@ -96,7 +101,7 @@ const proposalTitle = computed(() => {
 const deposit = ref({} as PaginatedProposalDeposit);
 store.fetchProposalDeposits(props.proposal_id).then((x) => (deposit.value = x));
 
-const votes = ref({} as GovVote[]);
+const votes = ref([] as GovVote[]);
 const pageRequest = ref(new PageRequest());
 const pageResponse = ref({} as Pagination);
 
@@ -326,6 +331,41 @@ const validatorVotes = computed(() => {
   result.notVoted.sort((a, b) => Number(b.votingPower) - Number(a.votingPower));
 
   return result;
+});
+
+const filteredYes = computed(() => {
+  if (!searchYes.value) return validatorVotes.value.yes;
+  return validatorVotes.value.yes.filter(v => 
+    v.moniker.toLowerCase().includes(searchYes.value.toLowerCase())
+  );
+});
+
+const filteredNo = computed(() => {
+  if (!searchNo.value) return validatorVotes.value.no;
+  return validatorVotes.value.no.filter(v => 
+    v.moniker.toLowerCase().includes(searchNo.value.toLowerCase())
+  );
+});
+
+const filteredVeto = computed(() => {
+  if (!searchVeto.value) return validatorVotes.value.veto;
+  return validatorVotes.value.veto.filter(v => 
+    v.moniker.toLowerCase().includes(searchVeto.value.toLowerCase())
+  );
+});
+
+const filteredAbstain = computed(() => {
+  if (!searchAbstain.value) return validatorVotes.value.abstain;
+  return validatorVotes.value.abstain.filter(v => 
+    v.moniker.toLowerCase().includes(searchAbstain.value.toLowerCase())
+  );
+});
+
+const filteredPending = computed(() => {
+  if (!searchPending.value) return validatorVotes.value.notVoted;
+  return validatorVotes.value.notVoted.filter(v => 
+    v.moniker.toLowerCase().includes(searchPending.value.toLowerCase())
+  );
 });
 
 const userVotes = computed(() => {
@@ -637,143 +677,204 @@ function formatVoteOption(option: string) {
         </div>
       </div>
 
-      <div v-if="votesTab === 'validators'" class="p-6">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-center">
-            <Icon icon="mdi:check-circle" class="text-emerald-500 text-2xl mb-1" />
-            <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ validatorVotes.yes.length }}</div>
-            <div class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Yes</div>
+      <div v-if="votesTab === 'validators'" class="p-6 space-y-4">
+        <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-500/30 overflow-hidden">
+          <div class="bg-emerald-50 dark:bg-emerald-500/10 p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
+                <Icon icon="mdi:check-bold" class="text-white text-xl" />
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-emerald-700 dark:text-emerald-400">Yes</h3>
+                <p class="text-sm text-emerald-600 dark:text-emerald-400/70">{{ validatorVotes.yes.length }} validators</p>
+              </div>
+            </div>
+            <div class="relative">
+              <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                v-model="searchYes"
+                type="text" 
+                placeholder="Search..." 
+                class="pl-9 pr-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-500/30 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-40"
+              />
+            </div>
           </div>
-          <div class="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-center">
-            <Icon icon="mdi:close-circle" class="text-red-500 text-2xl mb-1" />
-            <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ validatorVotes.no.length }}</div>
-            <div class="text-xs text-red-600 dark:text-red-400 font-medium">No</div>
-          </div>
-          <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-center">
-            <Icon icon="mdi:minus-circle" class="text-amber-500 text-2xl mb-1" />
-            <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ validatorVotes.abstain.length }}</div>
-            <div class="text-xs text-amber-600 dark:text-amber-400 font-medium">Abstain</div>
-          </div>
-          <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600/30 text-center">
-            <Icon icon="mdi:clock-outline" class="text-gray-400 text-2xl mb-1" />
-            <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">{{ validatorVotes.notVoted.length }}</div>
-            <div class="text-xs text-gray-500 font-medium">Not Voted</div>
+          <div class="p-4 bg-white dark:bg-gray-800/50 max-h-48 overflow-y-auto">
+            <div v-if="filteredYes.length === 0" class="text-center py-4 text-gray-400 text-sm">
+              {{ searchYes ? 'No matching validators' : 'No validators voted Yes yet' }}
+            </div>
+            <div v-else class="flex flex-wrap gap-2">
+              <span 
+                v-for="v in filteredYes" 
+                :key="v.operatorAddress"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm font-medium"
+              >
+                <span class="w-5 h-5 rounded-full bg-emerald-500 text-white text-xs flex items-center justify-center font-bold">
+                  {{ v.moniker.charAt(0).toUpperCase() }}
+                </span>
+                {{ v.moniker }}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700">
-                <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">Validator</th>
-                <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">Vote</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr 
-                v-for="v in validatorVotes.yes" 
-                :key="'yes-' + v.operatorAddress"
-                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+        <div class="rounded-xl border-2 border-red-200 dark:border-red-500/30 overflow-hidden">
+          <div class="bg-red-50 dark:bg-red-500/10 p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center">
+                <Icon icon="mdi:close-thick" class="text-white text-xl" />
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-red-700 dark:text-red-400">No</h3>
+                <p class="text-sm text-red-600 dark:text-red-400/70">{{ validatorVotes.no.length }} validators</p>
+              </div>
+            </div>
+            <div class="relative">
+              <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                v-model="searchNo"
+                type="text" 
+                placeholder="Search..." 
+                class="pl-9 pr-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-red-200 dark:border-red-500/30 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 w-40"
+              />
+            </div>
+          </div>
+          <div class="p-4 bg-white dark:bg-gray-800/50 max-h-48 overflow-y-auto">
+            <div v-if="filteredNo.length === 0" class="text-center py-4 text-gray-400 text-sm">
+              {{ searchNo ? 'No matching validators' : 'No validators voted No' }}
+            </div>
+            <div v-else class="flex flex-wrap gap-2">
+              <span 
+                v-for="v in filteredNo" 
+                :key="v.operatorAddress"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 text-sm font-medium"
               >
-                <td class="py-3 px-4">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-white text-xs font-bold">
-                      {{ v.moniker.charAt(0).toUpperCase() }}
-                    </div>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ v.moniker }}</span>
-                  </div>
-                </td>
-                <td class="py-3 px-4 text-center">
-                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
-                    <Icon icon="mdi:check" class="text-sm" />
-                    YES
-                  </span>
-                </td>
-              </tr>
-              <tr 
-                v-for="v in validatorVotes.no" 
-                :key="'no-' + v.operatorAddress"
-                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                <span class="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">
+                  {{ v.moniker.charAt(0).toUpperCase() }}
+                </span>
+                {{ v.moniker }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border-2 border-orange-200 dark:border-orange-500/30 overflow-hidden">
+          <div class="bg-orange-50 dark:bg-orange-500/10 p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
+                <Icon icon="mdi:cancel" class="text-white text-xl" />
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-orange-700 dark:text-orange-400">No With Veto</h3>
+                <p class="text-sm text-orange-600 dark:text-orange-400/70">{{ validatorVotes.veto.length }} validators</p>
+              </div>
+            </div>
+            <div class="relative">
+              <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                v-model="searchVeto"
+                type="text" 
+                placeholder="Search..." 
+                class="pl-9 pr-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-orange-200 dark:border-orange-500/30 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 w-40"
+              />
+            </div>
+          </div>
+          <div class="p-4 bg-white dark:bg-gray-800/50 max-h-48 overflow-y-auto">
+            <div v-if="filteredVeto.length === 0" class="text-center py-4 text-gray-400 text-sm">
+              {{ searchVeto ? 'No matching validators' : 'No validators voted No With Veto' }}
+            </div>
+            <div v-else class="flex flex-wrap gap-2">
+              <span 
+                v-for="v in filteredVeto" 
+                :key="v.operatorAddress"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 text-sm font-medium"
               >
-                <td class="py-3 px-4">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white text-xs font-bold">
-                      {{ v.moniker.charAt(0).toUpperCase() }}
-                    </div>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ v.moniker }}</span>
-                  </div>
-                </td>
-                <td class="py-3 px-4 text-center">
-                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 text-xs font-semibold">
-                    <Icon icon="mdi:close" class="text-sm" />
-                    NO
-                  </span>
-                </td>
-              </tr>
-              <tr 
-                v-for="v in validatorVotes.veto" 
-                :key="'veto-' + v.operatorAddress"
-                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                <span class="w-5 h-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-bold">
+                  {{ v.moniker.charAt(0).toUpperCase() }}
+                </span>
+                {{ v.moniker }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border-2 border-amber-200 dark:border-amber-500/30 overflow-hidden">
+          <div class="bg-amber-50 dark:bg-amber-500/10 p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center">
+                <Icon icon="mdi:minus-thick" class="text-white text-xl" />
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-amber-700 dark:text-amber-400">Abstain</h3>
+                <p class="text-sm text-amber-600 dark:text-amber-400/70">{{ validatorVotes.abstain.length }} validators</p>
+              </div>
+            </div>
+            <div class="relative">
+              <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                v-model="searchAbstain"
+                type="text" 
+                placeholder="Search..." 
+                class="pl-9 pr-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-500/30 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 w-40"
+              />
+            </div>
+          </div>
+          <div class="p-4 bg-white dark:bg-gray-800/50 max-h-48 overflow-y-auto">
+            <div v-if="filteredAbstain.length === 0" class="text-center py-4 text-gray-400 text-sm">
+              {{ searchAbstain ? 'No matching validators' : 'No validators abstained' }}
+            </div>
+            <div v-else class="flex flex-wrap gap-2">
+              <span 
+                v-for="v in filteredAbstain" 
+                :key="v.operatorAddress"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-sm font-medium"
               >
-                <td class="py-3 px-4">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold">
-                      {{ v.moniker.charAt(0).toUpperCase() }}
-                    </div>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ v.moniker }}</span>
-                  </div>
-                </td>
-                <td class="py-3 px-4 text-center">
-                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 text-xs font-semibold">
-                    <Icon icon="mdi:cancel" class="text-sm" />
-                    VETO
-                  </span>
-                </td>
-              </tr>
-              <tr 
-                v-for="v in validatorVotes.abstain" 
-                :key="'abstain-' + v.operatorAddress"
-                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                <span class="w-5 h-5 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold">
+                  {{ v.moniker.charAt(0).toUpperCase() }}
+                </span>
+                {{ v.moniker }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border-2 border-gray-200 dark:border-gray-600/50 overflow-hidden">
+          <div class="bg-gray-50 dark:bg-gray-700/30 p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-slate-500 flex items-center justify-center">
+                <Icon icon="mdi:clock-outline" class="text-white text-xl" />
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-gray-700 dark:text-gray-300">Not Voted Yet</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ validatorVotes.notVoted.length }} validators</p>
+              </div>
+            </div>
+            <div class="relative">
+              <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                v-model="searchPending"
+                type="text" 
+                placeholder="Search..." 
+                class="pl-9 pr-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600/50 text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 w-40"
+              />
+            </div>
+          </div>
+          <div class="p-4 bg-white dark:bg-gray-800/50 max-h-48 overflow-y-auto">
+            <div v-if="filteredPending.length === 0" class="text-center py-4 text-gray-400 text-sm">
+              {{ searchPending ? 'No matching validators' : 'All validators have voted' }}
+            </div>
+            <div v-else class="flex flex-wrap gap-2">
+              <span 
+                v-for="v in filteredPending" 
+                :key="v.operatorAddress"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 text-sm"
               >
-                <td class="py-3 px-4">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white text-xs font-bold">
-                      {{ v.moniker.charAt(0).toUpperCase() }}
-                    </div>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ v.moniker }}</span>
-                  </div>
-                </td>
-                <td class="py-3 px-4 text-center">
-                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-semibold">
-                    <Icon icon="mdi:minus" class="text-sm" />
-                    ABSTAIN
-                  </span>
-                </td>
-              </tr>
-              <tr 
-                v-for="v in validatorVotes.notVoted.slice(0, 30)" 
-                :key="'notvoted-' + v.operatorAddress"
-                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-              >
-                <td class="py-3 px-4">
-                  <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs font-bold">
-                      {{ v.moniker.charAt(0).toUpperCase() }}
-                    </div>
-                    <span class="font-medium text-gray-500 dark:text-gray-400">{{ v.moniker }}</span>
-                  </div>
-                </td>
-                <td class="py-3 px-4 text-center">
-                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700/50 text-gray-500 text-xs font-medium">
-                    <Icon icon="mdi:clock-outline" class="text-sm" />
-                    PENDING
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-if="validatorVotes.notVoted.length > 30" class="text-center py-4 text-sm text-gray-500">
-            + {{ validatorVotes.notVoted.length - 30 }} more validators not voted yet
+                <span class="w-5 h-5 rounded-full bg-gray-400 text-white text-xs flex items-center justify-center font-bold">
+                  {{ v.moniker.charAt(0).toUpperCase() }}
+                </span>
+                {{ v.moniker }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
