@@ -10,14 +10,17 @@ CoinHunters Explorer is a customized version of Ping.pub blockchain explorer, br
 
 - Complete UI redesign with modern gradient-based styling
 - Navigation moved from left sidebar to top navigation bar
+- Navigation shows: Dashboard, Governance, Staking, Uptime, Blocks, Transactions (icons only on mobile, with text on desktop)
 - Added CoinHunters branding (logo, favicon, site name)
 - Homepage redesigned with:
   - Hero section with CoinHunters branding
-  - TVL stats cards (Validator name, Mainnet count, Total Value Locked)
-  - Mainnet/Testnet tabs with chain counts
+  - TVL stats cards (Validator name, Mainnet count, Dynamic Total Value Locked calculation)
+  - TVL calculated from chain prices via CoinGecko API with $3M+ fallback
+  - Mainnet/Testnet tabs with chain counts (13 mainnet, 3 testnet)
   - Modern chain cards with price data and favorites
 - Added social media links (Website, X/Twitter, Telegram)
 - New footer with CoinHunters branding and links
+- Note: CORS errors for external APIs are expected in local development but resolve when deployed
 
 ## Project Architecture
 
