@@ -259,16 +259,19 @@ loadAvatars();
         </div>
         
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div class="flex items-center gap-4">
+          <RouterLink 
+            :to="{ name: 'chain-staking-validator', params: { validator: providerValidator.v.operator_address } }"
+            class="flex items-center gap-4 hover:opacity-80 transition-opacity cursor-pointer"
+          >
             <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden">
               <img v-if="providerValidator.logo" :src="providerValidator.logo" class="w-14 h-14 rounded-xl object-cover" />
               <Icon v-else icon="mdi:account" class="text-4xl text-white/80" />
             </div>
             <div>
-              <h3 class="text-2xl font-bold">{{ providerValidator.v.description?.moniker }}</h3>
+              <h3 class="text-2xl font-bold hover:underline">{{ providerValidator.v.description?.moniker }}</h3>
               <p class="text-white/70 text-sm mt-1">{{ providerValidator.v.description?.website }}</p>
             </div>
-          </div>
+          </RouterLink>
           
           <div class="flex flex-wrap items-center gap-6">
             <div class="text-center">
