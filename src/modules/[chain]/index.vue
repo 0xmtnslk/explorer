@@ -254,10 +254,127 @@ const amount = computed({
       </div>
     </div>
 
-    <!-- Modern Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      <div v-for="(item, key) in store.stats" :key="key">
-        <CardStatisticsVertical v-bind="item" />
+    <!-- Creative Network Stats Dashboard -->
+    <div class="grid grid-cols-12 gap-4">
+      <!-- Network Pulse - Block Height (Featured) -->
+      <div class="col-span-12 md:col-span-6 lg:col-span-4 relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-emerald-600 p-6 text-white">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="p-2 rounded-lg bg-white/20 backdrop-blur-sm">
+              <Icon icon="mdi:cube-scan" class="text-2xl" />
+            </div>
+            <span class="text-sm font-medium uppercase tracking-wider opacity-90">Block Height</span>
+          </div>
+          <div class="text-4xl font-bold tracking-tight">
+            {{ store.stats?.height?.stats || '0' }}
+          </div>
+          <div class="mt-2 flex items-center gap-2 text-sm opacity-80">
+            <Icon icon="mdi:pulse" class="animate-pulse" />
+            <span>Live Network</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Validators Card -->
+      <div class="col-span-6 md:col-span-3 lg:col-span-2 relative overflow-hidden rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 p-5 group hover:border-blue-400/50 transition-all">
+        <div class="absolute -top-6 -right-6 w-20 h-20 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+        <div class="relative z-10">
+          <div class="flex items-center justify-between mb-3">
+            <div class="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+              <Icon icon="mdi:account-group" class="text-xl text-white" />
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ store.stats?.validators?.stats || '0' }}
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">Validators</div>
+        </div>
+      </div>
+
+      <!-- Inflation Card with Gauge -->
+      <div class="col-span-6 md:col-span-3 lg:col-span-2 relative overflow-hidden rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 p-5 group hover:border-amber-400/50 transition-all">
+        <div class="absolute -top-6 -right-6 w-20 h-20 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+        <div class="relative z-10">
+          <div class="flex items-center justify-between mb-3">
+            <div class="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
+              <Icon icon="mdi:chart-line-variant" class="text-xl text-white" />
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ store.stats?.inflation?.stats || '0%' }}
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">Inflation</div>
+        </div>
+      </div>
+
+      <!-- Supply Card -->
+      <div class="col-span-6 md:col-span-4 lg:col-span-4 relative overflow-hidden rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 p-5 group hover:border-purple-400/50 transition-all">
+        <div class="absolute -bottom-8 -right-8 w-28 h-28 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+        <div class="relative z-10 flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <div class="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+                <Icon icon="mdi:cash-multiple" class="text-xl text-white" />
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ store.stats?.supply?.stats || '-' }}
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">Total Supply</div>
+          </div>
+          <div class="hidden md:block">
+            <div class="w-16 h-16 rounded-full border-4 border-purple-200 dark:border-purple-900 relative">
+              <div class="absolute inset-1 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <Icon icon="mdi:infinity" class="text-white text-xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bonded Tokens with Progress -->
+      <div class="col-span-6 md:col-span-4 lg:col-span-4 relative overflow-hidden rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 p-5 group hover:border-emerald-400/50 transition-all">
+        <div class="absolute -bottom-8 -left-8 w-28 h-28 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+        <div class="relative z-10">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <div class="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600">
+                <Icon icon="mdi:lock" class="text-xl text-white" />
+              </div>
+            </div>
+            <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-medium">Staked</span>
+          </div>
+          <div class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ store.stats?.bonded_tokens?.stats || '-' }}
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">Bonded Tokens</div>
+          <div class="mt-3 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-emerald-500 to-green-500 rounded-full" style="width: 65%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Community Pool -->
+      <div class="col-span-12 md:col-span-4 lg:col-span-4 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-5 text-white group">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
+        <div class="relative z-10 flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <div class="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
+                <Icon icon="mdi:bank" class="text-xl" />
+              </div>
+              <span class="text-sm font-medium opacity-90">Community Pool</span>
+            </div>
+            <div class="text-3xl font-bold">
+              {{ store.stats?.community_pool?.stats || '-' }}
+            </div>
+          </div>
+          <div class="text-right opacity-80">
+            <Icon icon="mdi:treasure-chest" class="text-5xl opacity-50" />
+          </div>
+        </div>
       </div>
     </div>
 
