@@ -1,0 +1,28 @@
+{
+    "chain_name": "Dymension",
+    "api": [
+        {
+            "address": "https://dymension.api.kjnodes.com:443", 
+            "provider": "CoinHunters"
+        }
+    ], 
+    "rpc": [
+        {
+            "address": "https://dymension.rpc.kjnodes.com:443", 
+            "provider": "CoinHunters"
+        }
+    ],
+    "sdk_version": "v0.46.15",
+    "coin_type": "118",
+    "min_tx_fee": "800",
+    "assets": [{
+        "base": "adym",
+        "symbol": "DYM",
+        "exponent": "18",
+        "coingecko_id": "dymension", 
+        "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/dymension/images/dymension-logo.png"
+    }],
+    "addr_prefix": "dym",
+    "theme_color": "#ce4747",
+    "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/dymension/images/dymension-logo.png"
+}
