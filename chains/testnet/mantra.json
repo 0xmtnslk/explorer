@@ -1,0 +1,28 @@
+{
+    "chain_name": "Mantra",
+    "api": [
+        {
+            "address": "https://mantra-testnet-api.itrocket.net", 
+            "provider": "CoinHunters"
+        }
+    ], 
+    "rpc": [
+        {
+            "address": "https://mantra-testnet-rpc.itrocket.net", 
+            "provider": "CoinHunters"
+        }
+    ],
+    "sdk_version": "v0.47.4",
+    "coin_type": "60",
+    "min_tx_fee": "500",
+    "assets": [{
+        "base": "uom",
+        "symbol": "OM",
+        "exponent": "6",
+        "coingecko_id": "mantra-dao", 
+        "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/mantrachain/images/OM-Prim-Col.png"
+    }],
+    "addr_prefix": "mantra",
+    "theme_color": "#ea4335",
+    "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/mantrachain/images/OM-Prim-Col.png"
+}
