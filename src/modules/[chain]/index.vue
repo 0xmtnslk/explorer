@@ -178,21 +178,21 @@ const amount = computed({
           <!-- Left Column: Price & Exchange Info -->
           <div class="lg:col-span-4 space-y-4">
             <!-- Live Price Card -->
-            <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gradient-to-br dark:from-white/10 dark:to-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 p-5 shadow-sm">
-              <div class="absolute top-0 right-0 w-20 h-20 bg-primary/10 dark:bg-primary/20 rounded-full blur-2xl"></div>
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-white dark:from-white/10 dark:to-white/5 backdrop-blur-xl border border-gray-200/80 dark:border-white/10 p-5 shadow-sm dark:shadow-none">
+              <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/10 to-emerald-500/10 dark:from-primary/20 dark:to-emerald-500/20 rounded-full blur-2xl"></div>
               <div class="relative">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Live Price</span>
-                  <span class="flex items-center gap-1 text-xs text-emerald-500 dark:text-emerald-400">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">Live Price</span>
+                  <span class="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     Live
                   </span>
                 </div>
-                <div class="flex items-end gap-3">
+                <div class="flex items-end gap-3 flex-wrap">
                   <span class="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">${{ ticker?.converted_last?.usd }}</span>
                   <span 
-                    class="text-lg font-semibold mb-1 px-2 py-0.5 rounded-lg"
-                    :class="store.priceChange >= 0 ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/20' : 'text-red-600 dark:text-red-400 bg-red-500/20'"
+                    class="text-base font-semibold mb-1 px-2.5 py-1 rounded-lg"
+                    :class="store.priceChange >= 0 ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/15' : 'text-red-600 dark:text-red-400 bg-red-500/15'"
                   >
                     {{ store.priceChange >= 0 ? '+' : '' }}{{ store.priceChange }}%
                   </span>
