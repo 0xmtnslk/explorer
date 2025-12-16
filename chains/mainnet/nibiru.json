@@ -1,0 +1,28 @@
+{
+    "chain_name": "Nibiru",
+    "api": [
+        {
+            "address": "https://nibiru.api.m.stavr.tech:443", 
+            "provider": "CoinHunters"
+        }
+    ], 
+    "rpc": [
+        {
+            "address": "https://nibiru.rpc.m.stavr.tech:443", 
+            "provider": "CoinHunters"
+        }
+    ],
+    "sdk_version": "v0.47.10",
+    "coin_type": "118",
+    "min_tx_fee": "800",
+    "assets": [{
+        "base": "unibi",
+        "symbol": "NIBI",
+        "exponent": "6",
+        "coingecko_id": "nibiru", 
+        "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/nibiru/images/nibiru.png"
+    }],
+    "addr_prefix": "nibiru",
+    "theme_color": "#ce4747",
+    "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/nibiru/images/nibiru.png"
+}
