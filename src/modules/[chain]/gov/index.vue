@@ -104,7 +104,7 @@ const proposalCount = computed(() => store?.proposals[tab.value]?.proposals?.len
     </div>
 
     <!-- Proposals List -->
-    <div class="rounded-2xl bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700/50 overflow-hidden shadow-sm">
+    <div class="rounded-2xl bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700/50 overflow-hidden shadow-sm min-h-[100px]">
       <ProposalListItem :proposals="store?.proposals[tab]" />
       
       <!-- Empty State -->

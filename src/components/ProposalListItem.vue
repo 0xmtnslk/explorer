@@ -37,11 +37,26 @@ const proposalInfo = ref();
 function metaItem(metadata: string | undefined): { title: string; summary: string } {
   return metadata ? JSON.parse(metadata) : {};
 }
+
+function getProposalTitle(item: any): string {
+  if (item?.content?.title) return item.content.title;
+  if (item?.title) return item.title;
+  try {
+    const meta = metaItem(item?.metadata);
+    if (meta?.title) return meta.title;
+  } catch (e) {}
+  if (item?.content?.plan?.name) return `Upgrade: ${item.content.plan.name}`;
+  if (item?.content?.['@type']) {
+    const type = item.content['@type'];
+    return type.substring(type.lastIndexOf('.') + 1).replace('Msg', '').replace(/([A-Z])/g, ' $1').trim();
+  }
+  return `Proposal #${item?.proposal_id || item?.id || 'Unknown'}`;
+}
 </script>
 <template>
   <div class="text-sm">
-    <!-- Desktop View -->
-    <div class="hidden lg:block divide-y divide-gray-100 dark:divide-gray-700/50">
+    <!-- Proposals List -->
+    <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
       <div 
         v-for="(item, index) in proposals?.proposals" 
         :key="index"
@@ -63,7 +78,7 @@ function metaItem(metadata: string | undefined): { title: string; summary: strin
               :to="`/${chain.chainName}/gov/${item?.proposal_id}`"
               class="text-base font-semibold text-gray-900 dark:text-white hover:text-primary transition-colors block truncate"
             >
-              {{ item?.content?.title || item?.title || metaItem(item?.metadata)?.title }}
+              {{ getProposalTitle(item) }}
             </RouterLink>
             <div class="flex items-center gap-2 mt-2">
               <span
@@ -134,7 +149,7 @@ function metaItem(metadata: string | undefined): { title: string; summary: strin
             :to="`/${chain.chainName}/gov/${item?.proposal_id}`" 
             class="flex-1 text-base font-semibold text-gray-900 dark:text-white hover:text-primary truncate"
           >
-            {{ item?.content?.title || item?.title || metaItem(item?.metadata)?.title }}
+            {{ getProposalTitle(item) }}
           </RouterLink>
           <label
             for="proposal-detail-modal"

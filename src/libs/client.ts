@@ -160,8 +160,8 @@ export class CosmosRestClient extends BaseRestClient<RequestRegistry> {
   async getGovProposals(status: string, page?: PageRequest) {
     if (!page) page = new PageRequest();
     page.reverse = true;
-    const query = `?proposal_status={status}&${page.toQueryString()}`;
-    return this.request(this.registry.gov_proposals, { status }, query);
+    const query = `?proposal_status=${status}&${page.toQueryString()}`;
+    return this.request(this.registry.gov_proposals, {}, query);
   }
   async getGovProposal(proposal_id: string) {
     return this.request(this.registry.gov_proposals_proposal_id, {
