@@ -1,0 +1,29 @@
+
+{
+    "chain_name": "Sunrise",
+    "api": [
+        {
+            "address": "https://sunrise-api.polkachu.com", 
+            "provider": "CoinHunters"
+        }
+    ], 
+    "rpc": [
+        {
+            "address": "https://sunrise-rpc.polkachu.com/", 
+            "provider": "CoinHunters"
+        }
+    ],
+    "sdk_version": "v0.47.4",
+    "coin_type": "118",
+    "min_tx_fee": "500",
+    "assets": [{
+        "base": "uvrise",
+        "symbol": "vRISE",
+        "exponent": "8",
+        "coingecko_id": "sunrise-layer", 
+        "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/refs/heads/master/sunrise/images/sunrise.svg"
+    }],
+    "addr_prefix": "rise",
+    "theme_color": "#ea4335",
+    "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/refs/heads/master/sunrise/images/sunrise.svg"
+}
