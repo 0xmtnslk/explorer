@@ -257,17 +257,30 @@ function showValidatorName(voter: string) {
   return getVoterInfo(voter).name;
 }
 
+function extractAddressKey(address: string): string {
+  try {
+    const normalized = address.replace('@', '');
+    const { data } = fromBech32(normalized);
+    return toHex(data);
+  } catch (e) {
+    const match = address.match(/1[a-z0-9]+$/);
+    if (match) {
+      return match[0];
+    }
+    return address;
+  }
+}
+
 const validatorVotes = computed(() => {
   const validators = stakingStore.validators || [];
-  const voteMap = new Map<string, string>();
+  const voteMap = new Map<string, { option: string, voter: string }>();
   
   if (votes.value && Array.isArray(votes.value)) {
     votes.value.forEach((v) => {
       try {
-        const { data } = fromBech32(v.voter);
-        const hex = toHex(data);
+        const key = extractAddressKey(v.voter);
         const option = v.option || (v.options && v.options[0]?.option) || 'VOTE_OPTION_UNSPECIFIED';
-        voteMap.set(hex, option);
+        voteMap.set(key, { option, voter: v.voter });
       } catch (e) {}
     });
   }
@@ -282,29 +295,35 @@ const validatorVotes = computed(() => {
 
   validators.forEach((val) => {
     try {
-      const { data } = fromBech32(val.operator_address);
-      const hex = toHex(data);
-      const vote = voteMap.get(hex);
+      const key = extractAddressKey(val.operator_address);
+      const voteInfo = voteMap.get(key);
       const validatorInfo = {
         moniker: val.description?.moniker || 'Unknown',
         operatorAddress: val.operator_address,
         votingPower: val.tokens,
-        vote: vote
+        vote: voteInfo?.option,
+        voterAddress: voteInfo?.voter
       };
 
-      if (!vote || vote === 'VOTE_OPTION_UNSPECIFIED') {
+      if (!voteInfo || voteInfo.option === 'VOTE_OPTION_UNSPECIFIED') {
         result.notVoted.push(validatorInfo);
-      } else if (vote === 'VOTE_OPTION_YES') {
+      } else if (voteInfo.option === 'VOTE_OPTION_YES') {
         result.yes.push(validatorInfo);
-      } else if (vote === 'VOTE_OPTION_NO') {
+      } else if (voteInfo.option === 'VOTE_OPTION_NO') {
         result.no.push(validatorInfo);
-      } else if (vote === 'VOTE_OPTION_ABSTAIN') {
+      } else if (voteInfo.option === 'VOTE_OPTION_ABSTAIN') {
         result.abstain.push(validatorInfo);
-      } else if (vote === 'VOTE_OPTION_NO_WITH_VETO') {
+      } else if (voteInfo.option === 'VOTE_OPTION_NO_WITH_VETO') {
         result.veto.push(validatorInfo);
       }
     } catch (e) {}
   });
+
+  result.yes.sort((a, b) => Number(b.votingPower) - Number(a.votingPower));
+  result.no.sort((a, b) => Number(b.votingPower) - Number(a.votingPower));
+  result.abstain.sort((a, b) => Number(b.votingPower) - Number(a.votingPower));
+  result.veto.sort((a, b) => Number(b.votingPower) - Number(a.votingPower));
+  result.notVoted.sort((a, b) => Number(b.votingPower) - Number(a.votingPower));
 
   return result;
 });
@@ -619,115 +638,142 @@ function formatVoteOption(option: string) {
       </div>
 
       <div v-if="votesTab === 'validators'" class="p-6">
-        <div class="grid md:grid-cols-3 gap-4 mb-6">
-          <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
-            <div class="flex items-center gap-2 mb-2">
-              <Icon icon="mdi:check-circle" class="text-emerald-500 text-xl" />
-              <span class="text-sm font-medium text-emerald-700 dark:text-emerald-400">Yes</span>
-            </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-center">
+            <Icon icon="mdi:check-circle" class="text-emerald-500 text-2xl mb-1" />
             <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ validatorVotes.yes.length }}</div>
+            <div class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Yes</div>
           </div>
-          <div class="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
-            <div class="flex items-center gap-2 mb-2">
-              <Icon icon="mdi:close-circle" class="text-red-500 text-xl" />
-              <span class="text-sm font-medium text-red-700 dark:text-red-400">No</span>
-            </div>
-            <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ validatorVotes.no.length + validatorVotes.veto.length }}</div>
+          <div class="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-center">
+            <Icon icon="mdi:close-circle" class="text-red-500 text-2xl mb-1" />
+            <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ validatorVotes.no.length }}</div>
+            <div class="text-xs text-red-600 dark:text-red-400 font-medium">No</div>
           </div>
-          <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600/30">
-            <div class="flex items-center gap-2 mb-2">
-              <Icon icon="mdi:clock-outline" class="text-gray-500 text-xl" />
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-400">Not Voted</span>
-            </div>
+          <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-center">
+            <Icon icon="mdi:minus-circle" class="text-amber-500 text-2xl mb-1" />
+            <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ validatorVotes.abstain.length }}</div>
+            <div class="text-xs text-amber-600 dark:text-amber-400 font-medium">Abstain</div>
+          </div>
+          <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600/30 text-center">
+            <Icon icon="mdi:clock-outline" class="text-gray-400 text-2xl mb-1" />
             <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">{{ validatorVotes.notVoted.length }}</div>
+            <div class="text-xs text-gray-500 font-medium">Not Voted</div>
           </div>
         </div>
 
-        <div class="space-y-4">
-          <div v-if="validatorVotes.yes.length > 0">
-            <h3 class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mb-3 flex items-center gap-2">
-              <Icon icon="mdi:check-circle" />
-              Voted Yes ({{ validatorVotes.yes.length }})
-            </h3>
-            <div class="flex flex-wrap gap-2">
-              <span 
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-gray-700">
+                <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">Validator</th>
+                <th class="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">Vote</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr 
                 v-for="v in validatorVotes.yes" 
-                :key="v.operatorAddress"
-                class="px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm font-medium"
+                :key="'yes-' + v.operatorAddress"
+                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
-                {{ v.moniker }}
-              </span>
-            </div>
-          </div>
-
-          <div v-if="validatorVotes.no.length > 0">
-            <h3 class="text-sm font-semibold text-red-600 dark:text-red-400 mb-3 flex items-center gap-2">
-              <Icon icon="mdi:close-circle" />
-              Voted No ({{ validatorVotes.no.length }})
-            </h3>
-            <div class="flex flex-wrap gap-2">
-              <span 
+                <td class="py-3 px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-white text-xs font-bold">
+                      {{ v.moniker.charAt(0).toUpperCase() }}
+                    </div>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ v.moniker }}</span>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
+                    <Icon icon="mdi:check" class="text-sm" />
+                    YES
+                  </span>
+                </td>
+              </tr>
+              <tr 
                 v-for="v in validatorVotes.no" 
-                :key="v.operatorAddress"
-                class="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 text-sm font-medium"
+                :key="'no-' + v.operatorAddress"
+                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
-                {{ v.moniker }}
-              </span>
-            </div>
-          </div>
-
-          <div v-if="validatorVotes.veto.length > 0">
-            <h3 class="text-sm font-semibold text-orange-600 dark:text-orange-400 mb-3 flex items-center gap-2">
-              <Icon icon="mdi:cancel" />
-              Voted No With Veto ({{ validatorVotes.veto.length }})
-            </h3>
-            <div class="flex flex-wrap gap-2">
-              <span 
+                <td class="py-3 px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white text-xs font-bold">
+                      {{ v.moniker.charAt(0).toUpperCase() }}
+                    </div>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ v.moniker }}</span>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 text-xs font-semibold">
+                    <Icon icon="mdi:close" class="text-sm" />
+                    NO
+                  </span>
+                </td>
+              </tr>
+              <tr 
                 v-for="v in validatorVotes.veto" 
-                :key="v.operatorAddress"
-                class="px-3 py-1.5 rounded-lg bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 text-sm font-medium"
+                :key="'veto-' + v.operatorAddress"
+                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
-                {{ v.moniker }}
-              </span>
-            </div>
-          </div>
-
-          <div v-if="validatorVotes.abstain.length > 0">
-            <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3 flex items-center gap-2">
-              <Icon icon="mdi:minus-circle" />
-              Abstained ({{ validatorVotes.abstain.length }})
-            </h3>
-            <div class="flex flex-wrap gap-2">
-              <span 
+                <td class="py-3 px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold">
+                      {{ v.moniker.charAt(0).toUpperCase() }}
+                    </div>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ v.moniker }}</span>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 text-xs font-semibold">
+                    <Icon icon="mdi:cancel" class="text-sm" />
+                    VETO
+                  </span>
+                </td>
+              </tr>
+              <tr 
                 v-for="v in validatorVotes.abstain" 
-                :key="v.operatorAddress"
-                class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 text-sm font-medium"
+                :key="'abstain-' + v.operatorAddress"
+                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
-                {{ v.moniker }}
-              </span>
-            </div>
-          </div>
-
-          <div v-if="validatorVotes.notVoted.length > 0">
-            <h3 class="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2">
-              <Icon icon="mdi:clock-outline" />
-              Not Voted Yet ({{ validatorVotes.notVoted.length }})
-            </h3>
-            <div class="flex flex-wrap gap-2">
-              <span 
-                v-for="v in validatorVotes.notVoted.slice(0, 20)" 
-                :key="v.operatorAddress"
-                class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700/30 text-gray-500 dark:text-gray-500 text-sm"
+                <td class="py-3 px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white text-xs font-bold">
+                      {{ v.moniker.charAt(0).toUpperCase() }}
+                    </div>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ v.moniker }}</span>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-semibold">
+                    <Icon icon="mdi:minus" class="text-sm" />
+                    ABSTAIN
+                  </span>
+                </td>
+              </tr>
+              <tr 
+                v-for="v in validatorVotes.notVoted.slice(0, 30)" 
+                :key="'notvoted-' + v.operatorAddress"
+                class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
-                {{ v.moniker }}
-              </span>
-              <span 
-                v-if="validatorVotes.notVoted.length > 20"
-                class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700/30 text-gray-500 text-sm"
-              >
-                +{{ validatorVotes.notVoted.length - 20 }} more
-              </span>
-            </div>
+                <td class="py-3 px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs font-bold">
+                      {{ v.moniker.charAt(0).toUpperCase() }}
+                    </div>
+                    <span class="font-medium text-gray-500 dark:text-gray-400">{{ v.moniker }}</span>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700/50 text-gray-500 text-xs font-medium">
+                    <Icon icon="mdi:clock-outline" class="text-sm" />
+                    PENDING
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="validatorVotes.notVoted.length > 30" class="text-center py-4 text-sm text-gray-500">
+            + {{ validatorVotes.notVoted.length - 30 }} more validators not voted yet
           </div>
         </div>
       </div>
