@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { useBlockchain, useFormatter, useStakingStore, useTxDialog } from '@/stores';
 import DynamicComponent from '@/components/dynamic/DynamicComponent.vue';
-import DonutChart from '@/components/charts/DonutChart.vue';
 import { computed, ref } from '@vue/reactivity';
 import { onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
@@ -25,10 +24,14 @@ const balances = ref([] as Coin[]);
 const recentReceived = ref([] as TxResponse[]);
 const unbonding = ref([] as UnbondingResponses[]);
 const unbondingTotal = ref(0);
-const chart = {};
+const showAllTxs = ref(false);
+const showAllReceived = ref(false);
+const activeTab = ref('assets');
+
 onMounted(() => {
   loadAccount(props.address);
 });
+
 const totalAmountByCategory = computed(() => {
   let sumDel = 0;
   delegations.value?.forEach((x) => {
@@ -48,13 +51,12 @@ const totalAmountByCategory = computed(() => {
       sumUn += Number(y.balance);
     });
   });
-  return [sumBal, sumDel, sumRew, sumUn];
+  return { balance: sumBal, delegation: sumDel, reward: sumRew, unbonding: sumUn };
 });
 
-const labels = ['Balance', 'Delegation', 'Reward', 'Unbonding'];
-
 const totalAmount = computed(() => {
-  return totalAmountByCategory.value.reduce((p, c) => c + p, 0);
+  const cat = totalAmountByCategory.value;
+  return cat.balance + cat.delegation + cat.reward + cat.unbonding;
 });
 
 const totalValue = computed(() => {
@@ -73,7 +75,18 @@ const totalValue = computed(() => {
       value += format.tokenValueNumber({ amount: y.balance, denom: stakingStore.params.bond_denom });
     });
   });
-  return format.formatNumber(value, '0,0.00');
+  return value;
+});
+
+const displayedTxs = computed(() => {
+  const allTxs = txs.value || [];
+  const reversedTxs = [...allTxs].reverse();
+  return showAllTxs.value ? reversedTxs : reversedTxs.slice(0, 5);
+});
+
+const displayedReceived = computed(() => {
+  const allReceived = recentReceived.value || [];
+  return showAllReceived.value ? allReceived : allReceived.slice(0, 5);
 });
 
 function loadAccount(address: string) {
@@ -101,7 +114,7 @@ function loadAccount(address: string) {
     });
   });
 
-  const receivedQuery = `?&pagination.reverse=true&events=coin_received.receiver='${address}'&pagination.limit=5`;
+  const receivedQuery = `?&pagination.reverse=true&events=coin_received.receiver='${address}'&pagination.limit=20`;
   blockchain.rpc.getTxs(receivedQuery, {}).then((x) => {
     recentReceived.value = x.tx_responses;
   });
@@ -118,245 +131,245 @@ function mapAmount(events: { type: string; attributes: { key: string; value: str
     ?.attributes.filter((x) => x.key === 'YW1vdW50' || x.key === `amount`)
     .map((x) => (x.key === 'amount' ? x.value : String.fromCharCode(...fromBase64(x.value))));
 }
+
+const copyAddress = async () => {
+  try {
+    await navigator.clipboard.writeText(props.address);
+  } catch (err) {}
+};
+
+const shortenAddress = (addr: string) => {
+  if (!addr) return '';
+  return addr.slice(0, 12) + '...' + addr.slice(-8);
+};
 </script>
+
 <template>
-  <div v-if="account">
-    <!-- address -->
-    <div class="bg-base-100 px-4 pt-3 pb-4 rounded mb-4 shadow">
-      <div class="flex items-center">
-        <!-- img -->
-        <div class="inline-flex relative w-11 h-11 rounded-md">
-          <div class="w-11 h-11 absolute rounded-md opacity-10 bg-primary"></div>
-          <div class="w-full inline-flex items-center align-middle flex-none justify-center">
-            <Icon icon="mdi-qrcode" class="text-primary" style="width: 27px; height: 27px" />
+  <div v-if="account" class="space-y-6">
+    <!-- Hero Section - Wallet Overview -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border border-gray-200/50 dark:border-gray-700/50">
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 dark:from-primary/20 via-transparent to-transparent"></div>
+      <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/5 to-emerald-500/5 rounded-full blur-3xl"></div>
+      
+      <div class="relative p-6 lg:p-8">
+        <div class="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+          <!-- Left: Address Info -->
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center shadow-lg">
+              <Icon icon="mdi:wallet" class="text-3xl text-white" />
+            </div>
+            <div>
+              <h1 class="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-1">Wallet Account</h1>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500 dark:text-gray-400 font-mono">{{ shortenAddress(address) }}</span>
+                <button @click="copyAddress" class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors">
+                  <Icon icon="mdi:content-copy" class="text-gray-400 hover:text-primary" />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-        <!-- content -->
-        <div class="flex flex-1 flex-col truncate pl-4">
-          <h2 class="text-sm card-title">{{ $t('account.address') }}:</h2>
-          <span class="text-xs truncate"> {{ address }}</span>
+
+          <!-- Right: Total Value & Actions -->
+          <div class="flex flex-col items-end gap-3">
+            <div class="text-right">
+              <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Value</div>
+              <div class="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">
+                ${{ format.formatNumber(totalValue, '0,0.00') }}
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button class="px-4 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-1.5" @click="dialog.open('send', {}, updateEvent)">
+                <Icon icon="mdi:send" />
+                Send
+              </button>
+              <button class="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-1.5" @click="dialog.open('transfer', { chain_name: blockchain.current?.prettyName }, updateEvent)">
+                <Icon icon="mdi:swap-horizontal" />
+                IBC Transfer
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Assets -->
-    <div class="bg-base-100 px-4 pt-3 pb-4 rounded mb-4 shadow">
-      <div class="flex justify-between">
-        <h2 class="card-title mb-4">{{ $t('account.assets') }}</h2>
-        <!-- button -->
-        <div class="flex justify-end mb-4 pr-5">
-          <label for="send" class="btn btn-primary btn-sm mr-2" @click="dialog.open('send', {}, updateEvent)">{{
-            $t('account.btn_send')
-          }}</label>
-          <label
-            for="transfer"
-            class="btn btn-primary btn-sm"
-            @click="
-              dialog.open(
-                'transfer',
-                {
-                  chain_name: blockchain.current?.prettyName,
-                },
-                updateEvent
-              )
-            "
-            >{{ $t('account.btn_transfer') }}</label
-          >
+    <!-- Asset Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+            <Icon icon="mdi:wallet" class="text-xl text-blue-500" />
+          </div>
+          <span class="text-sm text-gray-500 dark:text-gray-400">Available</span>
+        </div>
+        <div class="text-lg font-bold text-gray-900 dark:text-white">
+          {{ format.formatToken2({ amount: String(totalAmountByCategory.balance), denom: stakingStore.params.bond_denom }) }}
+        </div>
+        <div class="text-xs text-gray-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(totalAmountByCategory.balance), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
+      </div>
+
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <Icon icon="mdi:lock" class="text-xl text-amber-500" />
+          </div>
+          <span class="text-sm text-gray-500 dark:text-gray-400">Staked</span>
+        </div>
+        <div class="text-lg font-bold text-gray-900 dark:text-white">
+          {{ format.formatToken2({ amount: String(totalAmountByCategory.delegation), denom: stakingStore.params.bond_denom }) }}
+        </div>
+        <div class="text-xs text-gray-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(totalAmountByCategory.delegation), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
+      </div>
+
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+            <Icon icon="mdi:gift" class="text-xl text-emerald-500" />
+          </div>
+          <span class="text-sm text-gray-500 dark:text-gray-400">Rewards</span>
+        </div>
+        <div class="text-lg font-bold text-emerald-500">
+          {{ format.formatToken2({ amount: String(Math.floor(totalAmountByCategory.reward)), denom: stakingStore.params.bond_denom }) }}
+        </div>
+        <div class="text-xs text-gray-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(totalAmountByCategory.reward), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
+      </div>
+
+      <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 p-4">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+            <Icon icon="mdi:clock-outline" class="text-xl text-red-500" />
+          </div>
+          <span class="text-sm text-gray-500 dark:text-gray-400">Unbonding</span>
+        </div>
+        <div class="text-lg font-bold text-gray-900 dark:text-white">
+          {{ format.formatToken2({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }) }}
+        </div>
+        <div class="text-xs text-gray-400 mt-1">${{ format.formatNumber(format.tokenValueNumber({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }), '0,0.00') }}</div>
+      </div>
+    </div>
+
+    <!-- Assets Detail -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+      <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-xl bg-gradient-to-br from-primary to-emerald-500">
+              <Icon icon="mdi:chart-pie" class="text-xl text-white" />
+            </div>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Asset Breakdown</h2>
+          </div>
         </div>
       </div>
-      <div class="grid md:!grid-cols-3">
-        <div class="md:!col-span-1">
-          <DonutChart :series="totalAmountByCategory" :labels="labels" />
+      <div class="p-6 space-y-3">
+        <div v-for="(balanceItem, index) in balances" :key="'bal-'+index" class="flex items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mr-4">
+            <Icon icon="mdi:circle-multiple" class="text-xl text-blue-500" />
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ format.formatToken(balanceItem) }}</div>
+            <div class="text-xs text-gray-500">Available Balance</div>
+          </div>
+          <div class="text-right">
+            <div class="text-sm font-semibold text-primary">${{ format.tokenValue(balanceItem) }}</div>
+            <div class="text-xs text-gray-400">{{ format.calculatePercent(balanceItem.amount, totalAmount) }}</div>
+          </div>
         </div>
-        <div class="mt-4 md:!col-span-2 md:!mt-0 md:!ml-4">
-          <!-- list-->
-          <div class="">
-            <!--balances  -->
-            <div class="flex items-center px-4 mb-2" v-for="(balanceItem, index) in balances" :key="index">
-              <div class="w-9 h-9 rounded overflow-hidden flex items-center justify-center relative mr-4">
-                <Icon icon="mdi-account-cash" class="text-info" size="20" />
-                <div class="absolute top-0 bottom-0 left-0 right-0 bg-info opacity-20"></div>
-              </div>
-              <div class="flex-1">
-                <div class="text-sm font-semibold">
-                  {{ format.formatToken(balanceItem) }}
-                </div>
-                <div class="text-xs">
-                  {{ format.calculatePercent(balanceItem.amount, totalAmount) }}
-                </div>
-              </div>
-              <div class="text-xs truncate relative py-1 px-3 rounded-full w-fit text-primary dark:invert mr-2">
-                <span class="inset-x-0 inset-y-0 opacity-10 absolute bg-primary dark:invert text-sm"></span>
-                ${{ format.tokenValue(balanceItem) }}
-              </div>
-            </div>
-            <!--delegations  -->
-            <div class="flex items-center px-4 mb-2" v-for="(delegationItem, index) in delegations" :key="index">
-              <div class="w-9 h-9 rounded overflow-hidden flex items-center justify-center relative mr-4">
-                <Icon icon="mdi-user-clock" class="text-warning" size="20" />
-                <div class="absolute top-0 bottom-0 left-0 right-0 bg-warning opacity-20"></div>
-              </div>
-              <div class="flex-1">
-                <div class="text-sm font-semibold">
-                  {{ format.formatToken(delegationItem?.balance) }}
-                </div>
-                <div class="text-xs">
-                  {{ format.calculatePercent(delegationItem?.balance?.amount, totalAmount) }}
-                </div>
-              </div>
-              <div class="text-xs truncate relative py-1 px-3 rounded-full w-fit text-primary dark:invert mr-2">
-                <span class="inset-x-0 inset-y-0 opacity-10 absolute bg-primary dark:invert text-sm"></span>
-                ${{ format.tokenValue(delegationItem?.balance) }}
-              </div>
-            </div>
-            <!-- rewards.total -->
-            <div class="flex items-center px-4 mb-2" v-for="(rewardItem, index) in rewards.total" :key="index">
-              <div class="w-9 h-9 rounded overflow-hidden flex items-center justify-center relative mr-4">
-                <Icon icon="mdi-account-arrow-up" class="text-success" size="20" />
-                <div class="absolute top-0 bottom-0 left-0 right-0 bg-success opacity-20"></div>
-              </div>
-              <div class="flex-1">
-                <div class="text-sm font-semibold">
-                  {{ format.formatToken(rewardItem) }}
-                </div>
-                <div class="text-xs">
-                  {{ format.calculatePercent(rewardItem.amount, totalAmount) }}
-                </div>
-              </div>
-              <div class="text-xs truncate relative py-1 px-3 rounded-full w-fit text-primary dark:invert mr-2">
-                <span class="inset-x-0 inset-y-0 opacity-10 absolute bg-primary dark:invert text-sm"></span>${{
-                  format.tokenValue(rewardItem)
-                }}
-              </div>
-            </div>
-            <!-- mdi-account-arrow-right -->
-            <div class="flex items-center px-4">
-              <div class="w-9 h-9 rounded overflow-hidden flex items-center justify-center relative mr-4">
-                <Icon icon="mdi-account-arrow-right" class="text-error" size="20" />
-                <div class="absolute top-0 bottom-0 left-0 right-0 bg-error opacity-20"></div>
-              </div>
-              <div class="flex-1">
-                <div class="text-sm font-semibold">
-                  {{
-                    format.formatToken({
-                      amount: String(unbondingTotal),
-                      denom: stakingStore.params.bond_denom,
-                    })
-                  }}
-                </div>
-                <div class="text-xs">
-                  {{ format.calculatePercent(unbondingTotal, totalAmount) }}
-                </div>
-              </div>
-              <div class="text-xs truncate relative py-1 px-3 rounded-full w-fit text-primary dark:invert mr-2">
-                <span class="inset-x-0 inset-y-0 opacity-10 absolute bg-primary dark:invert"></span>
-                ${{
-                  format.tokenValue({
-                    amount: String(unbondingTotal),
-                    denom: stakingStore.params.bond_denom,
-                  })
-                }}
-              </div>
+
+        <div v-for="(delegationItem, index) in delegations" :key="'del-'+index" class="flex items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mr-4">
+            <Icon icon="mdi:lock" class="text-xl text-amber-500" />
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ format.formatToken(delegationItem?.balance) }}</div>
+            <div class="text-xs text-gray-500">
+              <RouterLink :to="`/${chain}/staking/${delegationItem.delegation.validator_address}`" class="text-primary hover:underline">
+                {{ format.validatorFromBech32(delegationItem.delegation.validator_address) || 'Validator' }}
+              </RouterLink>
             </div>
           </div>
-          <div
-            class="mt-4 text-lg font-semibold mr-5 pl-5 border-t pt-4 text-right"
-          >
-            {{ $t('account.total_value') }}: ${{ totalValue }}
+          <div class="text-right">
+            <div class="text-sm font-semibold text-primary">${{ format.tokenValue(delegationItem?.balance) }}</div>
+            <div class="text-xs text-gray-400">{{ format.calculatePercent(delegationItem?.balance?.amount, totalAmount) }}</div>
+          </div>
+        </div>
+
+        <div v-for="(rewardItem, index) in rewards.total" :key="'rew-'+index" class="flex items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center mr-4">
+            <Icon icon="mdi:gift" class="text-xl text-emerald-500" />
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-emerald-500">{{ format.formatToken(rewardItem) }}</div>
+            <div class="text-xs text-gray-500">Pending Rewards</div>
+          </div>
+          <div class="text-right">
+            <div class="text-sm font-semibold text-primary">${{ format.tokenValue(rewardItem) }}</div>
+            <div class="text-xs text-gray-400">{{ format.calculatePercent(rewardItem.amount, totalAmount) }}</div>
+          </div>
+        </div>
+
+        <div v-if="unbondingTotal > 0" class="flex items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center mr-4">
+            <Icon icon="mdi:clock-outline" class="text-xl text-red-500" />
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ format.formatToken({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }) }}</div>
+            <div class="text-xs text-gray-500">Unbonding</div>
+          </div>
+          <div class="text-right">
+            <div class="text-sm font-semibold text-primary">${{ format.tokenValue({ amount: String(unbondingTotal), denom: stakingStore.params.bond_denom }) }}</div>
+            <div class="text-xs text-gray-400">{{ format.calculatePercent(unbondingTotal, totalAmount) }}</div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Delegations -->
-    <div class="bg-base-100 px-4 pt-3 pb-4 rounded mb-4 shadow">
-      <div class="flex justify-between">
-        <h2 class="card-title mb-4">{{ $t('account.delegations') }}</h2>
-        <div class="flex justify-end mb-4">
-          <label for="delegate" class="btn btn-primary btn-sm mr-2" @click="dialog.open('delegate', {}, updateEvent)">{{
-            $t('account.btn_delegate')
-          }}</label>
-          <label for="withdraw" class="btn btn-primary btn-sm" @click="dialog.open('withdraw', {}, updateEvent)">{{
-            $t('account.btn_withdraw')
-          }}</label>
+    <div v-if="delegations.length > 0" class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+      <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
+              <Icon icon="mdi:account-group" class="text-xl text-white" />
+            </div>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Staking Delegations</h2>
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">{{ delegations.length }}</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary/90 transition-colors" @click="dialog.open('delegate', {}, updateEvent)">Delegate</button>
+            <button class="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors" @click="dialog.open('withdraw', {}, updateEvent)">Claim All</button>
+          </div>
         </div>
       </div>
       <div class="overflow-x-auto">
-        <table class="table w-full text-sm table-zebra">
-          <thead>
+        <table class="w-full">
+          <thead class="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th class="py-3">{{ $t('account.validator') }}</th>
-              <th class="py-3">{{ $t('account.delegation') }}</th>
-              <th class="py-3">{{ $t('account.rewards') }}</th>
-              <th class="py-3">{{ $t('account.action') }}</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Validator</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Delegation</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Rewards</th>
+              <th class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody class="text-sm">
-            <tr v-if="delegations.length === 0">
-              <td colspan="10">
-                <div class="text-center">{{ $t('account.no_delegations') }}</div>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="(v, index) in delegations" :key="index" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <td class="px-6 py-4">
+                <RouterLink :to="`/${chain}/staking/${v.delegation.validator_address}`" class="text-sm font-medium text-primary hover:underline">
+                  {{ format.validatorFromBech32(v.delegation.validator_address) || v.delegation.validator_address.slice(0, 20) + '...' }}
+                </RouterLink>
               </td>
-            </tr>
-            <tr v-for="(v, index) in delegations" :key="index">
-              <td class="text-caption text-primary py-3">
-                <RouterLink :to="`/${chain}/staking/${v.delegation.validator_address}`">{{
-                  format.validatorFromBech32(v.delegation.validator_address) || v.delegation.validator_address
-                }}</RouterLink>
+              <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ format.formatToken(v.balance, true, '0,0.[0000]') }}</div>
+                <div class="text-xs text-gray-500">${{ format.tokenValue(v.balance) }}</div>
               </td>
-              <td class="py-3">
-                {{ format.formatToken(v.balance, true, '0,0.[000000]') }}
+              <td class="px-6 py-4">
+                <div class="text-sm font-medium text-emerald-500">
+                  {{ format.formatTokens(rewards?.rewards?.find((x) => x.validator_address === v.delegation.validator_address)?.reward) }}
+                </div>
               </td>
-              <td class="py-3">
-                {{
-                  format.formatTokens(
-                    rewards?.rewards?.find((x) => x.validator_address === v.delegation.validator_address)?.reward
-                  )
-                }}
-              </td>
-              <td class="py-3">
-                <div v-if="v.balance" class="flex justify-end">
-                  <label
-                    for="delegate"
-                    class="btn btn-primary btn-xs mr-2"
-                    @click="
-                      dialog.open(
-                        'delegate',
-                        {
-                          validator_address: v.delegation.validator_address,
-                        },
-                        updateEvent
-                      )
-                    "
-                    >{{ $t('account.btn_delegate') }}</label
-                  >
-                  <label
-                    for="redelegate"
-                    class="btn btn-primary btn-xs mr-2"
-                    @click="
-                      dialog.open(
-                        'redelegate',
-                        {
-                          validator_address: v.delegation.validator_address,
-                        },
-                        updateEvent
-                      )
-                    "
-                    >{{ $t('account.btn_redelegate') }}</label
-                  >
-                  <label
-                    for="unbond"
-                    class="btn btn-primary btn-xs"
-                    @click="
-                      dialog.open(
-                        'unbond',
-                        {
-                          validator_address: v.delegation.validator_address,
-                        },
-                        updateEvent
-                      )
-                    "
-                    >{{ $t('account.btn_unbond') }}</label
-                  >
+              <td class="px-6 py-4">
+                <div class="flex justify-end gap-1">
+                  <button class="px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors" @click="dialog.open('delegate', { validator_address: v.delegation.validator_address }, updateEvent)">Delegate</button>
+                  <button class="px-2 py-1 rounded text-xs font-medium bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-colors" @click="dialog.open('redelegate', { validator_address: v.delegation.validator_address }, updateEvent)">Redelegate</button>
+                  <button class="px-2 py-1 rounded text-xs font-medium bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors" @click="dialog.open('unbond', { validator_address: v.delegation.validator_address }, updateEvent)">Unbond</button>
                 </div>
               </td>
             </tr>
@@ -366,168 +379,202 @@ function mapAmount(events: { type: string; attributes: { key: string; value: str
     </div>
 
     <!-- Unbonding Delegations -->
-    <div class="bg-base-100 px-4 pt-3 pb-4 rounded mb-4 shadow" v-if="unbonding && unbonding.length > 0">
-      <h2 class="card-title mb-4">{{ $t('account.unbonding_delegations') }}</h2>
+    <div v-if="unbonding && unbonding.length > 0" class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+      <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-xl bg-gradient-to-br from-red-500 to-pink-500">
+            <Icon icon="mdi:clock-alert" class="text-xl text-white" />
+          </div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Unbonding Delegations</h2>
+        </div>
+      </div>
       <div class="overflow-x-auto">
-        <table class="table text-sm w-full">
-          <thead>
+        <table class="w-full">
+          <thead class="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th class="py-3">{{ $t('account.creation_height') }}</th>
-              <th class="py-3">{{ $t('account.initial_balance') }}</th>
-              <th class="py-3">{{ $t('account.balance') }}</th>
-              <th class="py-3">{{ $t('account.completion_time') }}</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Validator</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Amount</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Completion</th>
             </tr>
           </thead>
-          <tbody class="text-sm" v-for="(v, index) in unbonding" :key="index">
-            <tr>
-              <td class="text-caption text-primary py-3 bg-slate-200" colspan="10">
-                <RouterLink :to="`/${chain}/staking/${v.validator_address}`">{{ v.validator_address }}</RouterLink>
-              </td>
-            </tr>
-            <tr v-for="entry in v.entries">
-              <td class="py-3">{{ entry.creation_height }}</td>
-              <td class="py-3">
-                {{
-                  format.formatToken(
-                    {
-                      amount: entry.initial_balance,
-                      denom: stakingStore.params.bond_denom,
-                    },
-                    true,
-                    '0,0.[00]'
-                  )
-                }}
-              </td>
-              <td class="py-3">
-                {{
-                  format.formatToken(
-                    {
-                      amount: entry.balance,
-                      denom: stakingStore.params.bond_denom,
-                    },
-                    true,
-                    '0,0.[00]'
-                  )
-                }}
-              </td>
-              <td class="py-3">
-                <Countdown :time="new Date(entry.completion_time).getTime() - new Date().getTime()" />
-              </td>
-            </tr>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <template v-for="(v, index) in unbonding" :key="index">
+              <tr v-for="entry in v.entries" :key="entry.creation_height" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <td class="px-6 py-4">
+                  <RouterLink :to="`/${chain}/staking/${v.validator_address}`" class="text-sm font-medium text-primary hover:underline">
+                    {{ format.validatorFromBech32(v.validator_address) || v.validator_address.slice(0, 20) + '...' }}
+                  </RouterLink>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm font-medium text-gray-900 dark:text-white">{{ format.formatToken({ amount: entry.balance, denom: stakingStore.params.bond_denom }, true, '0,0.[00]') }}</div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-2">
+                    <Icon icon="mdi:timer-sand" class="text-amber-500" />
+                    <Countdown :time="new Date(entry.completion_time).getTime() - new Date().getTime()" />
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
     </div>
 
     <!-- Transactions -->
-    <div class="bg-base-100 px-4 pt-3 pb-4 rounded mb-4 shadow">
-      <h2 class="card-title mb-4">{{ $t('account.transactions') }}</h2>
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+      <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500">
+              <Icon icon="mdi:swap-horizontal-bold" class="text-xl text-white" />
+            </div>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Transaction History</h2>
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">{{ txs.length || 0 }}</span>
+          </div>
+        </div>
+      </div>
       <div class="overflow-x-auto">
-        <table class="table w-full text-sm">
-          <thead>
+        <table class="w-full">
+          <thead class="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th class="py-3">{{ $t('account.height') }}</th>
-              <th class="py-3">{{ $t('account.hash') }}</th>
-              <th class="py-3">{{ $t('account.messages') }}</th>
-              <th class="py-3">{{ $t('account.time') }}</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Hash</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Type</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Height</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Time</th>
+              <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Status</th>
             </tr>
           </thead>
-          <tbody class="text-sm">
-            <tr v-if="txs.length === 0">
-              <td colspan="10">
-                <div class="text-center">{{ $t('account.no_transactions') }}</div>
-              </td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-if="!txs || txs.length === 0">
+              <td colspan="5" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">No transactions found</td>
             </tr>
-            <tr v-for="(v, index) in txs" :key="index">
-              <td class="text-sm py-3">
-                <RouterLink
-                  :to="`/${chain}/block/${v.height}`"
-                  class="text-primary dark:invert"
-                  >{{ v.height }}</RouterLink
-                >
-              </td>
-              <td class="truncate py-3" style="max-width: 200px">
-                <RouterLink
-                  :to="`/${chain}/tx/${v.txhash}`"
-                  class="text-primary dark:invert"
-                >
-                  {{ v.txhash }}
+            <tr v-for="(v, index) in displayedTxs" :key="index" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <td class="px-6 py-4">
+                <RouterLink :to="`/${chain}/tx/${v.txhash}`" class="text-sm font-mono text-primary hover:underline">
+                  {{ v.txhash?.slice(0, 8) }}...{{ v.txhash?.slice(-6) }}
                 </RouterLink>
               </td>
-              <td class="flex items-center py-3">
-                <div class="mr-2">
+              <td class="px-6 py-4">
+                <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                   {{ format.messages(v.tx.body.messages) }}
-                </div>
-                <Icon v-if="v.code === 0" icon="mdi-check" class="text-success text-lg" />
-                <Icon v-else icon="mdi-multiply" class="text-error text-lg" />
+                </span>
               </td>
-              <td class="py-3">
-                {{ format.toLocaleDate(v.timestamp) }}
-                <span class="text-xs">({{ format.toDay(v.timestamp, 'from') }})</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Received -->
-    <div class="bg-base-100 px-4 pt-3 pb-4 rounded mb-4 shadow">
-      <h2 class="card-title mb-4">{{ $t('account.received') }}</h2>
-      <div class="overflow-x-auto">
-        <table class="table w-full text-sm">
-          <thead>
-            <tr>
-              <th class="py-3">{{ $t('account.height') }}</th>
-              <th class="py-3">{{ $t('account.hash') }}</th>
-              <th class="py-3">{{ $t('account.amount') }}</th>
-              <th class="py-3">{{ $t('account.time') }}</th>
-            </tr>
-          </thead>
-          <tbody class="text-sm">
-            <tr v-if="recentReceived.length === 0">
-              <td colspan="10">
-                <div class="text-center">{{ $t('account.no_transactions') }}</div>
-              </td>
-            </tr>
-            <tr v-for="(v, index) in recentReceived" :key="index">
-              <td class="text-sm py-3">
-                <RouterLink
-                  :to="`/${chain}/block/${v.height}`"
-                  class="text-primary dark:invert"
-                  >{{ v.height }}</RouterLink
-                >
-              </td>
-              <td class="truncate py-3" style="max-width: 200px">
-                <RouterLink
-                  :to="`/${chain}/tx/${v.txhash}`"
-                  class="text-primary dark:invert"
-                >
-                  {{ v.txhash }}
+              <td class="px-6 py-4">
+                <RouterLink :to="`/${chain}/block/${v.height}`" class="text-sm text-primary hover:underline">
+                  {{ v.height }}
                 </RouterLink>
               </td>
-              <td class="flex items-center py-3">
-                <div class="mr-2">
-                  {{ mapAmount(v.events)?.join(', ') }}
-                </div>
-                <Icon v-if="v.code === 0" icon="mdi-check" class="text-success text-lg" />
-                <Icon v-else icon="mdi-multiply" class="text-error text-lg" />
+              <td class="px-6 py-4">
+                <div class="text-sm text-gray-900 dark:text-white">{{ format.toDay(v.timestamp, 'from') }}</div>
+                <div class="text-xs text-gray-500">{{ format.toLocaleDate(v.timestamp) }}</div>
               </td>
-              <td class="py-3">
-                {{ format.toLocaleDate(v.timestamp) }}
-                <span class="text-xs">({{ format.toDay(v.timestamp, 'from') }})</span>
+              <td class="px-6 py-4 text-center">
+                <span v-if="v.code === 0" class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                  <Icon icon="mdi:check-circle" />
+                  Success
+                </span>
+                <span v-else class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                  <Icon icon="mdi:close-circle" />
+                  Failed
+                </span>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+      <div v-if="txs && txs.length > 5" class="p-4 border-t border-gray-200/50 dark:border-gray-700/50 text-center">
+        <button @click="showAllTxs = !showAllTxs" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+          {{ showAllTxs ? 'Show Less' : `View All ${txs.length} Transactions` }}
+        </button>
+      </div>
     </div>
 
-    <!-- Account -->
-    <div class="bg-base-100 px-4 pt-3 pb-4 rounded mb-4 shadow">
-      <h2 class="card-title mb-4">{{ $t('account.acc') }}</h2>
-      <DynamicComponent :value="account" />
+    <!-- Recent Received -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+      <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500">
+            <Icon icon="mdi:arrow-down-bold" class="text-xl text-white" />
+          </div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Received</h2>
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">{{ recentReceived.length || 0 }}</span>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50 dark:bg-gray-700/50">
+            <tr>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Hash</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Amount</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Height</th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Time</th>
+              <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-if="recentReceived.length === 0">
+              <td colspan="5" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">No received transactions found</td>
+            </tr>
+            <tr v-for="(v, index) in displayedReceived" :key="index" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <td class="px-6 py-4">
+                <RouterLink :to="`/${chain}/tx/${v.txhash}`" class="text-sm font-mono text-primary hover:underline">
+                  {{ v.txhash?.slice(0, 8) }}...{{ v.txhash?.slice(-6) }}
+                </RouterLink>
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-sm font-medium text-emerald-500">{{ mapAmount(v.events)?.join(', ') || '-' }}</span>
+              </td>
+              <td class="px-6 py-4">
+                <RouterLink :to="`/${chain}/block/${v.height}`" class="text-sm text-primary hover:underline">
+                  {{ v.height }}
+                </RouterLink>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm text-gray-900 dark:text-white">{{ format.toDay(v.timestamp, 'from') }}</div>
+                <div class="text-xs text-gray-500">{{ format.toLocaleDate(v.timestamp) }}</div>
+              </td>
+              <td class="px-6 py-4 text-center">
+                <span v-if="v.code === 0" class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                  <Icon icon="mdi:check-circle" />
+                  Success
+                </span>
+                <span v-else class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                  <Icon icon="mdi:close-circle" />
+                  Failed
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-if="recentReceived && recentReceived.length > 5" class="p-4 border-t border-gray-200/50 dark:border-gray-700/50 text-center">
+        <button @click="showAllReceived = !showAllReceived" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+          {{ showAllReceived ? 'Show Less' : `View All ${recentReceived.length} Received` }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Account Details -->
+    <div class="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+      <div class="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-xl bg-gradient-to-br from-gray-500 to-slate-500">
+            <Icon icon="mdi:code-json" class="text-xl text-white" />
+          </div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Account Details</h2>
+        </div>
+      </div>
+      <div class="p-6">
+        <DynamicComponent :value="account" />
+      </div>
     </div>
   </div>
-  <div v-else class="text-no text-sm">{{ $t('account.error') }}</div>
+  
+  <div v-else class="flex items-center justify-center min-h-[400px]">
+    <div class="text-center">
+      <Icon icon="mdi:alert-circle" class="text-5xl text-gray-400 mb-4" />
+      <p class="text-gray-500 dark:text-gray-400">Account not found or loading...</p>
+    </div>
+  </div>
 </template>
