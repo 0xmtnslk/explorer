@@ -105,7 +105,9 @@ const votes = ref([] as GovVote[]);
 const pageRequest = ref(new PageRequest());
 const pageResponse = ref({} as Pagination);
 
-store.fetchProposalVotes(props.proposal_id).then((x) => {
+const allVotesRequest = new PageRequest();
+allVotesRequest.limit = 500;
+store.fetchProposalVotes(props.proposal_id, allVotesRequest).then((x) => {
   votes.value = x.votes;
   pageResponse.value = x.pagination;
 });
@@ -270,7 +272,11 @@ function extractAddressKey(address: string): string {
   } catch (e) {
     const match = address.match(/1[a-z0-9]+$/);
     if (match) {
-      return match[0];
+      const full = match[0];
+      if (full.length > 6) {
+        return full.slice(0, -6);
+      }
+      return full;
     }
     return address;
   }
@@ -289,7 +295,7 @@ const validatorVotes = computed(() => {
       } catch (e) {}
     });
   }
-
+  
   const result = {
     yes: [] as any[],
     no: [] as any[],
@@ -322,6 +328,16 @@ const validatorVotes = computed(() => {
         result.veto.push(validatorInfo);
       }
     } catch (e) {}
+  });
+
+  console.log('Validator Votes Summary:', {
+    voteMapSize: voteMap.size,
+    validatorsCount: validators.length,
+    yes: result.yes.length,
+    no: result.no.length,
+    abstain: result.abstain.length,
+    veto: result.veto.length,
+    notVoted: result.notVoted.length
   });
 
   result.yes.sort((a, b) => Number(b.votingPower) - Number(a.votingPower));
