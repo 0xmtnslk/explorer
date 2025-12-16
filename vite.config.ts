@@ -11,6 +11,12 @@ import Pages from 'vite-plugin-pages';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 
 export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    port: 5000,
+    strictPort: true,
+    allowedHosts: true,
+  },
   define: {
     'process.env': {},
   },
