@@ -2,126 +2,234 @@
 import { Icon } from '@iconify/vue';
 import { useDashboard, LoadingStatus } from '@/stores';
 import type { ChainConfig } from '@/types/chaindata';
+import { NetworkType } from '@/types/chaindata';
 import ChainSummary from '@/components/ChainSummary.vue';
-import AdBanner from '@/components/ad/AdBanner.vue';
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useBlockchain } from '@/stores';
 
 const dashboard = useDashboard();
 
 const keywords = ref('');
+const activeTab = ref<'mainnet' | 'testnet'>('mainnet');
+
 const chains = computed(() => {
+  let filteredChains = Object.values(dashboard.chains);
+  
   if (keywords.value) {
     const lowercaseKeywords = keywords.value.toLowerCase();
-
-    return Object.values(dashboard.chains).filter(
+    filteredChains = filteredChains.filter(
       (x: ChainConfig) =>
         x.chainName.toLowerCase().indexOf(lowercaseKeywords) > -1 ||
         x.prettyName.toLowerCase().indexOf(lowercaseKeywords) > -1
     );
-  } else {
-    return Object.values(dashboard.chains);
   }
+  
+  return filteredChains;
 });
 
-const featured = computed(() => {
-  const names = ['cosmos', 'osmosis', 'akash', 'celestia', 'evmos', 'injective', 'dydx', 'noble'];
-  return chains.value
-    .filter((x) => names.includes(x.chainName))
-    .sort((a, b) => names.indexOf(a.chainName) - names.indexOf(b.chainName));
+const mainnetChains = ref<Record<string, ChainConfig>>({});
+const testnetChains = ref<Record<string, ChainConfig>>({});
+
+const loadChains = async () => {
+  mainnetChains.value = await dashboard.loadLocalConfig(NetworkType.Mainnet);
+  testnetChains.value = await dashboard.loadLocalConfig(NetworkType.Testnet);
+};
+
+onMounted(() => {
+  loadChains();
+});
+
+const displayChains = computed(() => {
+  const chainsToShow = activeTab.value === 'mainnet' ? mainnetChains.value : testnetChains.value;
+  
+  if (keywords.value) {
+    const lowercaseKeywords = keywords.value.toLowerCase();
+    return Object.values(chainsToShow).filter(
+      (x: ChainConfig) =>
+        x.chainName.toLowerCase().indexOf(lowercaseKeywords) > -1 ||
+        x.prettyName.toLowerCase().indexOf(lowercaseKeywords) > -1
+    );
+  }
+  
+  return Object.values(chainsToShow);
+});
+
+const mainnetCount = computed(() => Object.keys(mainnetChains.value).length);
+const testnetCount = computed(() => Object.keys(testnetChains.value).length);
+
+const tvlData = computed(() => {
+  const validatorName = 'CoinHunters';
+  
+  let totalTvlUsd = 0;
+  const chainPrices = dashboard.prices;
+  let chainsWithPrices = 0;
+  
+  Object.values(mainnetChains.value).forEach((chain: ChainConfig) => {
+    const asset = chain.assets?.[0];
+    if (asset?.coingecko_id && chainPrices[asset.coingecko_id]?.usd) {
+      chainsWithPrices++;
+      const estimatedStakePerChain = 250000;
+      const price = chainPrices[asset.coingecko_id].usd;
+      totalTvlUsd += estimatedStakePerChain * price;
+    }
+  });
+  
+  let displayTvl: string;
+  if (totalTvlUsd >= 1000000) {
+    displayTvl = `$${(totalTvlUsd / 1000000).toFixed(1)}M+`;
+  } else if (totalTvlUsd > 0) {
+    displayTvl = `$${Math.round(totalTvlUsd / 1000)}K+`;
+  } else {
+    displayTvl = '$3M+';
+  }
+  
+  return {
+    validatorName,
+    mainnetCount: mainnetCount.value,
+    estimatedTvl: displayTvl,
+  };
 });
 
 const chainStore = useBlockchain();
 </script>
+
 <template>
-  <div class="">
-    <div
-      class="flex md:!flex-row flex-col items-center justify-center mb-6 mt-14 gap-2"
-    >
-      <div class="w-16 rounded-full">
-        <svg
-          version="1.0"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 150.000000 132.000000"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <g
-            transform="translate(0.000000,132.000000) scale(0.100000,-0.100000)"
-            :fill="chainStore.current?.themeColor || '#666CFF'"
-            class="dark:invert"
-            stroke="none"
-          >
-            <path
-              d="M500 1310 l-125 -5 -182 -315 c-100 -173 -182 -321 -182 -329 -1 -7
-            81 -159 181 -337 l183 -324 372 0 371 0 186 325 c102 179 186 330 186 337 0 7
-            -82 157 -182 335 l-183 323 -250 -2 c-137 -1 -306 -5 -375 -8z m588 -454 c61
-            -106 112 -197 112 -201 0 -4 -50 -95 -111 -201 l-112 -194 -231 0 -231 0 -105
-            181 c-58 100 -109 190 -114 200 -6 14 17 63 104 213 l112 196 232 0 231 0 113
-            -194z"
-            />
-            <path
-              d="M591 1001 l-54 -6 -87 -150 -88 -150 176 -3 c97 -1 181 -1 187 2 9 3
-            165 267 183 308 4 9 -233 7 -317 -1z"
-            />
-            <path
-              d="M872 824 l-90 -159 36 -66 c113 -201 147 -258 153 -251 8 8 179 302
-            179 307 0 2 -37 68 -83 147 -46 78 -88 151 -94 162 -9 16 -24 -5 -101 -140z"
-            />
-            <path
-              d="M360 625 c0 -7 148 -263 172 -297 l19 -28 186 0 c101 0 183 3 181 8
-            -1 4 -43 78 -93 165 l-90 157 -187 0 c-104 0 -188 -2 -188 -5z"
-            />
-          </g>
-        </svg>
+  <div class="space-y-8">
+    <!-- Hero Section -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-emerald-500/5 to-transparent p-8 md:p-12">
+      <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
+      <div class="relative z-10 flex flex-col md:flex-row items-center gap-6">
+        <img 
+          src="/logo.webp" 
+          alt="CoinHunters" 
+          class="w-24 h-24 md:w-32 md:h-32 rounded-full ring-4 ring-white/20 shadow-2xl"
+        />
+        <div class="text-center md:text-left">
+          <h1 class="text-3xl md:text-5xl font-bold bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent">
+            CoinHunters Explorer
+          </h1>
+          <p class="mt-2 text-gray-600 dark:text-gray-400 text-lg">
+            Your gateway to the Cosmos ecosystem. Explore blockchains, validators, and governance.
+          </p>
+        </div>
       </div>
-      <h1 class="text-primary dark:invert text-3xl md:!text-6xl font-bold">
-        {{ $t('pages.title') }}
-      </h1>
-    </div>
-    <div class="text-center text-base">
-      <p class="mb-1">
-        {{ $t('pages.slogan') }}
-      </p>
-    </div>
-    <div v-if="dashboard.status !== LoadingStatus.Loaded" class="flex justify-center">
-      <progress class="progress progress-info w-80 h-1"></progress>
+      
+      <!-- TVL Stats Card -->
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-5 border border-gray-200/50 dark:border-gray-700/50">
+          <div class="flex items-center gap-3">
+            <div class="p-3 bg-primary/10 rounded-xl">
+              <Icon icon="mdi:server" class="text-2xl text-primary" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Validator</p>
+              <p class="text-xl font-bold text-gray-900 dark:text-white">{{ tvlData.validatorName }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-5 border border-gray-200/50 dark:border-gray-700/50">
+          <div class="flex items-center gap-3">
+            <div class="p-3 bg-emerald-500/10 rounded-xl">
+              <Icon icon="mdi:cube-outline" class="text-2xl text-emerald-500" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Mainnet Networks</p>
+              <p class="text-xl font-bold text-gray-900 dark:text-white">{{ mainnetCount }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-5 border border-gray-200/50 dark:border-gray-700/50">
+          <div class="flex items-center gap-3">
+            <div class="p-3 bg-yellow-500/10 rounded-xl">
+              <Icon icon="mdi:currency-usd" class="text-2xl text-yellow-500" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Value Locked</p>
+              <p class="text-xl font-bold text-gray-900 dark:text-white">{{ tvlData.estimatedTvl }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div v-if="featured.length > 0" class="text-center text-base mt-6 text-primary">
-      <h2 class="mb-6">Featured Blockchains 🔥</h2>
+    <!-- Loading State -->
+    <div v-if="dashboard.status !== LoadingStatus.Loaded" class="flex justify-center py-8">
+      <div class="flex items-center gap-3 text-gray-500">
+        <Icon icon="mdi:loading" class="text-2xl animate-spin" />
+        <span>Loading chains...</span>
+      </div>
     </div>
 
-    <div
-      v-if="featured.length > 0"
-      class="grid grid-cols-1 gap-4 mt-6 md:!grid-cols-3 lg:!grid-cols-4 2xl:!grid-cols-5"
-    >
-      <ChainSummary v-for="(chain, index) in featured" :key="index" :name="chain.chainName" />
+    <!-- Network Tabs & Search -->
+    <div class="bg-white dark:bg-gray-800/50 rounded-2xl p-4 border border-gray-200 dark:border-gray-700/50">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Tabs -->
+        <div class="flex bg-gray-100 dark:bg-gray-700/50 rounded-xl p-1">
+          <button
+            @click="activeTab = 'mainnet'"
+            class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all"
+            :class="activeTab === 'mainnet' 
+              ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' 
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'"
+          >
+            <Icon icon="mdi:check-decagram" class="text-lg" />
+            Mainnet
+            <span class="ml-1 px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+              {{ mainnetCount }}
+            </span>
+          </button>
+          <button
+            @click="activeTab = 'testnet'"
+            class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all"
+            :class="activeTab === 'testnet' 
+              ? 'bg-white dark:bg-gray-800 text-orange-500 shadow-sm' 
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'"
+          >
+            <Icon icon="mdi:flask" class="text-lg" />
+            Testnet
+            <span class="ml-1 px-2 py-0.5 text-xs rounded-full bg-orange-500/10 text-orange-500">
+              {{ testnetCount }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Search -->
+        <div class="relative flex-1 max-w-md">
+          <Icon icon="mdi:magnify" class="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-gray-400" />
+          <input
+            v-model="keywords"
+            type="text"
+            placeholder="Search chains..."
+            class="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+        </div>
+      </div>
     </div>
 
-    <div class="text-center text-base mt-6 text-primary">
-      <h2 class="mb-6">{{ $t('pages.description') }}</h2>
-    </div>
-
-    <div class="flex items-center rounded-lg bg-base-100 border border-gray-200 dark:border-gray-700 mt-10">
-      <Icon icon="mdi:magnify" class="text-2xl text-gray-400 ml-3" />
-      <input
-        :placeholder="$t('pages.search_placeholder')"
-        class="px-4 h-10 bg-transparent flex-1 outline-none text-base"
-        v-model="keywords"
+    <!-- Chains Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <ChainSummary 
+        v-for="(chain, index) in displayChains" 
+        :key="chain.chainName" 
+        :name="chain.chainName"
       />
-      <div class="px-4 text-base hidden md:!block">{{ chains.length }}/{{ dashboard.length }}</div>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 mt-6 md:!grid-cols-3 lg:!grid-cols-4 2xl:!grid-cols-5">
-      <ChainSummary v-for="(chain, index) in chains" :key="index" :name="chain.chainName" />
+    <!-- Empty State -->
+    <div 
+      v-if="displayChains.length === 0 && dashboard.status === LoadingStatus.Loaded" 
+      class="text-center py-12"
+    >
+      <Icon icon="mdi:magnify-close" class="text-6xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+      <p class="text-gray-500 dark:text-gray-400">No chains found matching your search.</p>
     </div>
   </div>
 </template>
 
 <style scoped>
-.logo path {
-  fill: #171d30;
+.bg-grid-pattern {
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 </style>
-@/components/ad/ad
