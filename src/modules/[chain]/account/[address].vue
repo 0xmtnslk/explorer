@@ -27,9 +27,12 @@ const unbondingTotal = ref(0);
 const showAllTxs = ref(false);
 const showAllReceived = ref(false);
 const activeTab = ref('assets');
+const isLoading = ref(true);
 
 onMounted(() => {
-  loadAccount(props.address);
+  if (props.address) {
+    loadAccount(props.address);
+  }
 });
 
 const totalAmountByCategory = computed(() => {
@@ -90,34 +93,40 @@ const displayedReceived = computed(() => {
 });
 
 function loadAccount(address: string) {
-  blockchain.rpc.getAuthAccount(address).then((x) => {
-    account.value = x.account;
-  });
-  blockchain.rpc.getTxsBySender(address).then((x) => {
-    txs.value = x.tx_responses;
-  });
-  blockchain.rpc.getDistributionDelegatorRewards(address).then((x) => {
-    rewards.value = x;
-  });
-  blockchain.rpc.getStakingDelegations(address).then((x) => {
-    delegations.value = x.delegation_responses;
-  });
-  blockchain.rpc.getBankBalances(address).then((x) => {
-    balances.value = x.balances;
-  });
-  blockchain.rpc.getStakingDelegatorUnbonding(address).then((x) => {
-    unbonding.value = x.unbonding_responses;
-    x.unbonding_responses?.forEach((y) => {
-      y.entries.forEach((z) => {
-        unbondingTotal.value += Number(z.balance);
+  isLoading.value = true;
+  
+  Promise.all([
+    blockchain.rpc.getAuthAccount(address).then((x) => {
+      account.value = x.account;
+    }).catch(() => {}),
+    blockchain.rpc.getTxsBySender(address).then((x) => {
+      txs.value = x.tx_responses || [];
+    }).catch(() => { txs.value = []; }),
+    blockchain.rpc.getDistributionDelegatorRewards(address).then((x) => {
+      rewards.value = x;
+    }).catch(() => {}),
+    blockchain.rpc.getStakingDelegations(address).then((x) => {
+      delegations.value = x.delegation_responses || [];
+    }).catch(() => { delegations.value = []; }),
+    blockchain.rpc.getBankBalances(address).then((x) => {
+      balances.value = x.balances || [];
+    }).catch(() => { balances.value = []; }),
+    blockchain.rpc.getStakingDelegatorUnbonding(address).then((x) => {
+      unbonding.value = x.unbonding_responses || [];
+      x.unbonding_responses?.forEach((y) => {
+        y.entries.forEach((z) => {
+          unbondingTotal.value += Number(z.balance);
+        });
       });
-    });
+    }).catch(() => { unbonding.value = []; }),
+  ]).finally(() => {
+    isLoading.value = false;
   });
 
   const receivedQuery = `?&pagination.reverse=true&events=coin_received.receiver='${address}'&pagination.limit=20`;
   blockchain.rpc.getTxs(receivedQuery, {}).then((x) => {
-    recentReceived.value = x.tx_responses;
-  });
+    recentReceived.value = x.tx_responses || [];
+  }).catch(() => { recentReceived.value = []; });
 }
 
 function updateEvent() {
@@ -145,7 +154,14 @@ const shortenAddress = (addr: string) => {
 </script>
 
 <template>
-  <div v-if="account" class="space-y-6">
+  <div v-if="isLoading" class="flex items-center justify-center min-h-[400px]">
+    <div class="text-center">
+      <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-gray-500 dark:text-gray-400">Loading account data...</p>
+    </div>
+  </div>
+  
+  <div v-else-if="address" class="space-y-6">
     <!-- Hero Section - Wallet Overview -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border border-gray-200/50 dark:border-gray-700/50">
       <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 dark:from-primary/20 via-transparent to-transparent"></div>
