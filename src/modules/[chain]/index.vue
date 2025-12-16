@@ -400,44 +400,44 @@ const amount = computed({
         </div>
       </div>
 
-      <!-- Recent Transactions -->
+      <!-- Recent Blocks -->
       <div class="rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200/50 dark:border-gray-700/50">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-emerald-500/10">
-              <Icon icon="mdi:swap-horizontal" class="text-xl text-primary" />
+              <Icon icon="mdi:cube-outline" class="text-xl text-primary" />
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Blocks</h3>
           </div>
-          <RouterLink :to="`/${chain}/tx`" class="text-sm text-primary hover:underline font-medium">
+          <RouterLink :to="`/${chain}/block`" class="text-sm text-primary hover:underline font-medium">
             View More
           </RouterLink>
         </div>
         <div class="p-5">
-          <div v-if="baseStore.txsInRecents && baseStore.txsInRecents.length > 0" class="space-y-2">
+          <div v-if="baseStore.recents && baseStore.recents.length > 0" class="space-y-2">
             <RouterLink 
-              v-for="(tx, index) in baseStore.txsInRecents.slice(0, 5)" 
-              :key="tx.hash"
-              :to="`/${chain}/tx/${tx.hash}`"
+              v-for="(block, index) in baseStore.recents.slice(-5).reverse()" 
+              :key="block.block?.header?.height"
+              :to="`/${chain}/block/${block.block?.header?.height}`"
               class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-all"
             >
               <div class="flex items-center gap-3">
                 <div class="p-2 rounded-lg bg-primary/10">
-                  <Icon icon="mdi:file-document-outline" class="text-primary" />
+                  <Icon icon="mdi:cube" class="text-primary" />
                 </div>
                 <div>
                   <div class="text-sm font-medium text-gray-900 dark:text-white">
-                    {{ tx.hash.substring(0, 10) }}...{{ tx.hash.substring(tx.hash.length - 6) }}
+                    Block #{{ block.block?.header?.height }}
                   </div>
-                  <div class="text-xs text-gray-500">Block #{{ tx.height }}</div>
+                  <div class="text-xs text-gray-500">{{ block.block?.data?.txs?.length || 0 }} transactions</div>
                 </div>
               </div>
               <Icon icon="mdi:chevron-right" class="text-gray-400" />
             </RouterLink>
           </div>
           <div v-else class="text-center text-gray-500 dark:text-gray-400 py-4">
-            <Icon icon="mdi:swap-horizontal" class="text-4xl mb-2 opacity-50" />
-            <p>No recent transactions</p>
+            <Icon icon="mdi:cube-outline" class="text-4xl mb-2 opacity-50" />
+            <p>Loading blocks...</p>
           </div>
         </div>
       </div>

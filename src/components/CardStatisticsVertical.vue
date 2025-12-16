@@ -22,32 +22,33 @@ const isPositive = controlledComputed(
 </script>
 
 <template>
-  <div class="bg-base-100 shadow rounded p-4">
-    <div class="flex items-center justify-center">
-      <div v-if="props.icon" class="relative w-9 h-9 rounded overflow-hidden flex items-center justify-center">
-        <Icon :class="[`text-${props?.color}`]" :icon="props.icon" size="32" />
-        <div class="absolute top-0 left-0 bottom-0 right-0 opacity-20" :class="[`bg-${props?.color}`]"></div>
+  <div class="group relative overflow-hidden rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 p-5 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5">
+    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/5 to-transparent rounded-bl-full"></div>
+    
+    <div class="relative">
+      <div class="flex items-center justify-center mb-3">
+        <div v-if="props.icon" class="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-emerald-500/10">
+          <Icon :class="[`text-${props?.color}`]" :icon="props.icon" class="text-2xl" />
+        </div>
       </div>
 
       <div
         v-if="props.change"
-        :class="isPositive ? 'text-success' : 'text-error'"
-        class="flex items-center text-sm font-semibold"
+        :class="isPositive ? 'text-emerald-500' : 'text-red-500'"
+        class="flex items-center justify-center text-xs font-semibold mb-1"
       >
+        <Icon :icon="isPositive ? 'mdi:trending-up' : 'mdi:trending-down'" class="mr-1" />
         <span>{{ isPositive ? `+${props.change}` : props.change }}%</span>
-        <Icon :icon="isPositive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
       </div>
-    </div>
 
-    <div class="">
-      <h6 class="text-lg text-center font-semibold mt-2 mb-1">
+      <h6 class="text-xl text-center font-bold text-gray-900 dark:text-white mb-1">
         {{ props.stats || '-' }}
       </h6>
-      <p class="text-sm text-center">
+      <p class="text-xs text-center text-gray-500 dark:text-gray-400 uppercase tracking-wide">
         {{ props.title }}
       </p>
 
-      <div v-if="props.subtitle" size="x-small" class="font-semibold">
+      <div v-if="props.subtitle" class="text-xs text-center text-gray-400 mt-1 font-medium">
         <span class="truncate">{{ props.subtitle }}</span>
       </div>
     </div>
