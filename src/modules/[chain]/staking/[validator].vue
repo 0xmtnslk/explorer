@@ -57,9 +57,10 @@ const signingInfo = ref({} as Record<string, SigningInfo>);
 const uptime = ref<number | null>(null);
 const showAllTxs = ref(false);
 const showAllEvents = ref(false);
-const liveBlocks = ref<{ height: string; signed: boolean }[]>([]);
+const liveBlocks = ref<{ height: string; signed: boolean; isNew?: boolean }[]>([]);
 const validatorBase64 = ref('');
 const loadingBlocks = ref(true);
+const latestBlockHeight = ref('');
 
 addresses.value.account = operatorAddressToAccount(validator);
 
@@ -140,20 +141,30 @@ const initLiveBlocks = async () => {
   
   liveBlocks.value = blocks;
   loadingBlocks.value = false;
+  if (blocks.length > 0) {
+    latestBlockHeight.value = blocks[blocks.length - 1].height;
+  }
 };
 
 baseStore.$subscribe((_, state) => {
   if (validatorBase64.value && state.recents?.length > 0) {
     const latestBlock = state.recents[state.recents.length - 1];
-    if (latestBlock?.block?.header?.height) {
+    if (latestBlock?.block?.header?.height && latestBlock.block.header.height !== latestBlockHeight.value) {
+      latestBlockHeight.value = latestBlock.block.header.height;
       const exists = liveBlocks.value.find(b => b.height === latestBlock.block.header.height);
       if (!exists) {
         const sig = latestBlock.block?.last_commit?.signatures?.find((s: any) => s.validator_address === validatorBase64.value);
+        liveBlocks.value.forEach(b => b.isNew = false);
         liveBlocks.value.push({
           height: latestBlock.block.header.height,
-          signed: !!sig && sig.block_id_flag === 'BLOCK_ID_FLAG_COMMIT'
+          signed: !!sig && sig.block_id_flag === 'BLOCK_ID_FLAG_COMMIT',
+          isNew: true
         });
         if (liveBlocks.value.length > 100) liveBlocks.value.shift();
+        setTimeout(() => {
+          const block = liveBlocks.value.find(b => b.height === latestBlock.block.header.height);
+          if (block) block.isNew = false;
+        }, 1000);
       }
     }
   }
@@ -372,11 +383,16 @@ const getUptimeColor = (value: number | null) => {
             <div class="flex items-center gap-2">
               <Icon icon="mdi:cube-outline" class="text-lg text-primary" />
               <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Block Signing History</span>
+              <span v-if="latestBlockHeight" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
+                Latest: #{{ latestBlockHeight }}
+              </span>
             </div>
-            <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span class="text-xs text-gray-500 dark:text-gray-400">Live</span>
-              <span class="text-xs text-gray-400 dark:text-gray-500 ml-2">{{ liveBlocks.length }}/100</span>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Live</span>
+              </div>
+              <span class="text-xs text-gray-400 dark:text-gray-500 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700">{{ liveBlocks.length }}/100</span>
             </div>
           </div>
           
@@ -392,11 +408,16 @@ const getUptimeColor = (value: number | null) => {
               v-for="(block, idx) in liveBlocks"
               :key="block.height"
               class="group relative aspect-square rounded-[2px] transition-all duration-200 cursor-pointer hover:scale-150 hover:z-10"
-              :class="block.signed ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-red-500 hover:bg-red-400'"
+              :class="[
+                block.signed ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-red-500 hover:bg-red-400',
+                block.isNew ? 'animate-pulse ring-2 ring-white dark:ring-yellow-400 ring-offset-1' : ''
+              ]"
             >
+              <div v-if="block.isNew" class="absolute inset-0 rounded-[2px] bg-white/50 animate-ping"></div>
               <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded-md bg-gray-900 dark:bg-gray-700 text-white text-[10px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 shadow-lg">
                 <span class="text-gray-400">#</span>{{ block.height }}
                 <span class="ml-1" :class="block.signed ? 'text-emerald-400' : 'text-red-400'">{{ block.signed ? 'Signed' : 'Missed' }}</span>
+                <span v-if="block.isNew" class="ml-1 text-yellow-400">NEW</span>
                 <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
               </div>
             </div>
