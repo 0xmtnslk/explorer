@@ -118,74 +118,119 @@ const amount = computed({
 
 <template>
   <div class="space-y-6">
-    <!-- Hero Section with Chain Info -->
-    <div v-if="coinInfo && coinInfo.name" class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-emerald-500/5 border border-gray-200/50 dark:border-gray-700/50">
-      <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
+    <!-- Hero Section with Chain Info - Modern Design -->
+    <div v-if="coinInfo && coinInfo.name" class="relative overflow-hidden rounded-3xl">
+      <!-- Animated Background -->
+      <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent"></div>
+      <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl"></div>
       
-      <div class="relative p-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Left: Chain Info -->
-          <div class="space-y-4">
-            <div class="flex items-center gap-4">
-              <div class="text-2xl font-bold text-gray-900 dark:text-white">
-                {{ coinInfo.name }}
-                <span class="text-lg text-gray-500 dark:text-gray-400 uppercase">({{ coinInfo.symbol }})</span>
+      <div class="relative p-6 lg:p-8">
+        <!-- Top Row: Header with Logo, Name, Rank, Social Links -->
+        <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+          <!-- Left: Coin Identity -->
+          <div class="flex items-center gap-4">
+            <div class="relative">
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl p-0.5">
+                <div class="w-full h-full rounded-2xl bg-slate-800/80 flex items-center justify-center overflow-hidden">
+                  <img v-if="coinInfo.image?.large" :src="coinInfo.image?.large" :alt="coinInfo.name" class="w-12 h-12 object-contain" />
+                  <Icon v-else icon="mdi:currency-btc" class="text-3xl text-primary" />
+                </div>
+              </div>
+              <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-slate-800 flex items-center justify-center">
+                <Icon icon="mdi:check" class="text-white text-xs" />
               </div>
             </div>
-            
-            <div class="flex items-center gap-2">
-              <span class="px-3 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-500 border border-red-500/20">
-                Rank #{{ coinInfo.market_cap_rank }}
-              </span>
+            <div>
+              <h1 class="text-2xl lg:text-3xl font-bold text-white flex items-center gap-2">
+                {{ coinInfo.name }}
+                <span class="text-lg text-gray-400 font-normal uppercase">{{ coinInfo.symbol }}</span>
+              </h1>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30">
+                  <Icon icon="mdi:trophy" class="text-sm" />
+                  Rank #{{ coinInfo.market_cap_rank }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Social Links -->
+          <div class="flex items-center gap-2">
+            <a
+              v-for="(item, index) of comLinks"
+              :key="index"
+              :href="item.href"
+              target="_blank"
+              class="group relative p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 transition-all"
+              :title="item.name"
+            >
+              <Icon :icon="item?.icon" class="text-xl text-gray-400 group-hover:text-primary transition-colors" />
+            </a>
+          </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left Column: Price & Exchange Info -->
+          <div class="lg:col-span-4 space-y-4">
+            <!-- Live Price Card -->
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 p-5">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-primary/20 rounded-full blur-2xl"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs text-gray-400 uppercase tracking-wide">Live Price</span>
+                  <span class="flex items-center gap-1 text-xs text-emerald-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Live
+                  </span>
+                </div>
+                <div class="flex items-end gap-3">
+                  <span class="text-3xl lg:text-4xl font-bold text-white">${{ ticker?.converted_last?.usd }}</span>
+                  <span 
+                    class="text-lg font-semibold mb-1 px-2 py-0.5 rounded-lg"
+                    :class="store.priceChange >= 0 ? 'text-emerald-400 bg-emerald-500/20' : 'text-red-400 bg-red-500/20'"
+                  >
+                    {{ store.priceChange >= 0 ? '+' : '' }}{{ store.priceChange }}%
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <!-- Social Links -->
-            <div class="flex flex-wrap gap-2">
-              <a
-                v-for="(item, index) of comLinks"
-                :key="index"
-                :href="item.href"
-                class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:text-primary transition-all"
-              >
-                <Icon :icon="item?.icon" class="text-base" />
-                <span class="uppercase text-xs font-medium">{{ item?.name }}</span>
-              </a>
-            </div>
-
-            <!-- Exchange Dropdown -->
+            <!-- Exchange Selector -->
             <div class="dropdown dropdown-hover w-full">
-              <label>
-                <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm flex items-center justify-between px-4 py-3 cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary/50 transition-all">
-                  <div>
-                    <div class="font-semibold text-lg text-gray-900 dark:text-white">
-                      {{ ticker?.market?.name || '' }}
+              <label tabindex="0">
+                <div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/30 cursor-pointer transition-all group">
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20">
+                      <Icon icon="mdi:bank" class="text-xl text-blue-400" />
                     </div>
-                    <div class="text-primary text-sm">
-                      {{ shortName(ticker?.base, ticker?.coin_id) }}/{{ shortName(ticker?.target, ticker?.target_coin_id) }}
+                    <div>
+                      <div class="font-semibold text-white">{{ ticker?.market?.name || 'Select Exchange' }}</div>
+                      <div class="text-xs text-primary">
+                        {{ shortName(ticker?.base, ticker?.coin_id) }}/{{ shortName(ticker?.target, ticker?.target_coin_id) }}
+                      </div>
                     </div>
                   </div>
-                  <div class="text-right">
-                    <div class="text-xl font-bold text-gray-900 dark:text-white">
-                      ${{ ticker?.converted_last?.usd }}
-                    </div>
-                    <div class="text-sm font-medium" :class="store.priceColor">{{ store.priceChange }}%</div>
-                  </div>
+                  <Icon icon="mdi:chevron-down" class="text-xl text-gray-400 group-hover:text-primary transition-colors" />
                 </div>
               </label>
-              <div class="dropdown-content pt-2 z-20">
-                <div class="h-64 overflow-auto w-full shadow-xl rounded-xl border border-gray-200 dark:border-gray-700">
-                  <ul class="menu w-full bg-white dark:bg-gray-800 rounded-xl">
+              <div class="dropdown-content pt-2 z-20 w-full">
+                <div class="max-h-64 overflow-auto w-full shadow-2xl rounded-2xl border border-gray-700 bg-slate-800">
+                  <ul class="menu w-full p-2">
                     <li v-for="(item, index) in store.coinInfo.tickers" :key="index" @click="store.selectTicker(index)">
-                      <div class="flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg">
+                      <div class="flex items-center justify-between hover:bg-white/5 rounded-xl p-3">
                         <div class="flex-1">
-                          <div class="text-sm font-medium" :class="trustColor(item.trust_score)">
+                          <div class="text-sm font-medium text-white" :class="trustColor(item.trust_score)">
                             {{ item?.market?.name }}
                           </div>
-                          <div class="text-xs text-gray-500 dark:text-gray-400">
+                          <div class="text-xs text-gray-400">
                             {{ shortName(item?.base, item?.coin_id) }}/{{ shortName(item?.target, item?.target_coin_id) }}
                           </div>
                         </div>
-                        <div class="text-sm font-semibold text-gray-900 dark:text-white">${{ item?.converted_last?.usd }}</div>
+                        <div class="text-sm font-semibold text-white">${{ item?.converted_last?.usd }}</div>
                       </div>
                     </li>
                   </ul>
@@ -194,35 +239,38 @@ const amount = computed({
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex gap-2">
-              <label class="btn btn-primary !px-3" for="calculator">
-                <Icon icon="mdi:calculator" class="text-xl" />
+            <div class="flex gap-3">
+              <label class="flex-none p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/30 cursor-pointer transition-all" for="calculator">
+                <Icon icon="mdi:calculator" class="text-xl text-gray-400 hover:text-primary" />
               </label>
               <a
-                class="btn grow text-white"
-                :class="{ '!bg-gradient-to-r !from-emerald-500 !to-green-600': store.trustColor === 'green', '!bg-gradient-to-r !from-yellow-500 !to-orange-500': store.trustColor === 'yellow' }"
+                class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-white transition-all"
+                :class="store.trustColor === 'green' ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700' : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600'"
                 :href="tickerUrl(ticker.trade_url)"
                 target="_blank"
               >
-                <Icon icon="mdi:cart" class="mr-1" />
+                <Icon icon="mdi:shopping" />
                 {{ $t('index.buy') }} {{ coinInfo.symbol || '' }}
               </a>
             </div>
           </div>
 
-          <!-- Right: Price Chart -->
-          <div class="lg:col-span-2">
-            <PriceMarketChart />
+          <!-- Right Column: Price Chart -->
+          <div class="lg:col-span-8">
+            <div class="h-full rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-4 overflow-hidden">
+              <PriceMarketChart />
+            </div>
           </div>
         </div>
 
-        <!-- Description -->
-        <div class="mt-6 pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
-          <div class="max-h-[200px] overflow-auto text-sm text-gray-600 dark:text-gray-400">
-            <MdEditor :model-value="coinInfo.description?.en" previewOnly></MdEditor>
-          </div>
-          <div class="mt-4 flex flex-wrap gap-2">
-            <span v-for="tag in coinInfo.categories" class="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+        <!-- Bottom: Categories -->
+        <div class="mt-6 pt-6 border-t border-white/10">
+          <div class="flex flex-wrap gap-2">
+            <span 
+              v-for="tag in coinInfo.categories" 
+              :key="tag"
+              class="px-3 py-1.5 text-xs font-medium rounded-full bg-white/5 text-gray-300 border border-white/10 hover:border-primary/30 hover:text-primary transition-all cursor-default"
+            >
               {{ tag }}
             </span>
           </div>
@@ -232,25 +280,28 @@ const amount = computed({
       <!-- Calculator Modal -->
       <input type="checkbox" id="calculator" class="modal-toggle" />
       <div class="modal">
-        <div class="modal-box">
-          <h3 class="text-lg font-bold">{{ $t('index.price_calculator') }}</h3>
+        <div class="modal-box bg-slate-800 border border-white/10">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <Icon icon="mdi:calculator" class="text-primary" />
+            {{ $t('index.price_calculator') }}
+          </h3>
           <div class="flex flex-col w-full mt-5">
             <div class="grid h-20 flex-grow card rounded-box place-items-center">
               <div class="join w-full">
-                <label class="join-item btn"><span class="uppercase">{{ coinInfo.symbol }}</span></label>
-                <input type="number" v-model="qty" min="0" placeholder="Input a number" class="input grow input-bordered join-item" />
+                <label class="join-item btn btn-primary"><span class="uppercase">{{ coinInfo.symbol }}</span></label>
+                <input type="number" v-model="qty" min="0" placeholder="Input a number" class="input grow input-bordered join-item bg-slate-700 border-slate-600 text-white" />
               </div>
             </div>
-            <div class="divider">=</div>
+            <div class="divider text-gray-400">=</div>
             <div class="grid h-20 flex-grow card rounded-box place-items-center">
               <div class="join w-full">
-                <label class="join-item btn"><span>USD</span></label>
-                <input type="number" v-model="amount" min="0" placeholder="Input amount" class="join-item grow input input-bordered" />
+                <label class="join-item btn btn-success"><span>USD</span></label>
+                <input type="number" v-model="amount" min="0" placeholder="Input amount" class="join-item grow input input-bordered bg-slate-700 border-slate-600 text-white" />
               </div>
             </div>
           </div>
         </div>
-        <label class="modal-backdrop" for="calculator">{{ $t('index.close') }}</label>
+        <label class="modal-backdrop bg-black/60" for="calculator">{{ $t('index.close') }}</label>
       </div>
     </div>
 
