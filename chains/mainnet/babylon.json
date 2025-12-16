@@ -1,0 +1,28 @@
+ {
+     "chain_name": "Babylon",
+     "api": [
+         {
+             "address": "https://babylon-api.polkachu.com:443", 
+             "provider": "CoinHunters"
+         }
+     ], 
+     "rpc": [
+         {
+             "address": "https://babylon-rpc.polkachu.com:443", 
+             "provider": "CoinHunters"
+         }
+     ],
+     "sdk_version": "v0.50.9",
+     "coin_type": "60",
+     "min_tx_fee": "500",
+     "assets": [{
+         "base": "ubbn",
+         "symbol": "BABY",
+         "exponent": "6",
+         "coingecko_id": "babylon", 
+         "logo": "https://pbs.twimg.com/profile_images/1877371944636485632/kzLetgFB_400x400.jpg"
+     }],
+     "addr_prefix": "bbn",
+     "theme_color": "#c45a0b",
+     "logo": "https://pbs.twimg.com/profile_images/1877371944636485632/kzLetgFB_400x400.jpg"
+ }
