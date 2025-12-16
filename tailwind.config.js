@@ -12,6 +12,11 @@ module.exports = {
         secondary: 'var(--text-secondary)',
         active: 'var(--bg-active)',
       },
+      gridTemplateColumns: {
+        '20': 'repeat(20, minmax(0, 1fr))',
+        '25': 'repeat(25, minmax(0, 1fr))',
+        '50': 'repeat(50, minmax(0, 1fr))',
+      },
     },
   },
   plugins: [require('daisyui')],

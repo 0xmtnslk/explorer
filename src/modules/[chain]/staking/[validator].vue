@@ -354,47 +354,8 @@ const getUptimeColor = (value: number | null) => {
             </div>
           </div>
 
-          <!-- Right: Live Blocks & Action Button -->
-          <div class="flex flex-col items-end gap-4 lg:ml-auto">
-            <!-- Live Uptime Blocks - Grid Box -->
-            <div class="bg-gray-100/80 dark:bg-gray-800/80 rounded-xl p-3 border border-gray-200/50 dark:border-gray-700/50">
-              <div class="flex items-center justify-between gap-4 mb-2">
-                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Live Blocks (Last 100)</span>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span class="text-xs text-gray-500 dark:text-gray-400">Live</span>
-                </div>
-              </div>
-              <div v-if="loadingBlocks" class="grid grid-cols-10 gap-0.5">
-                <div
-                  v-for="i in 100"
-                  :key="i"
-                  class="w-3 h-3 rounded-sm bg-gray-300 dark:bg-gray-600 animate-pulse"
-                ></div>
-              </div>
-              <div v-else class="grid grid-cols-10 gap-0.5">
-                <div
-                  v-for="(block, idx) in liveBlocks"
-                  :key="block.height"
-                  class="w-3 h-3 rounded-sm transition-all duration-300 cursor-pointer hover:scale-125"
-                  :class="block.signed ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-red-500 hover:bg-red-400'"
-                  :title="'Block #' + block.height + (block.signed ? ' - Signed' : ' - Missed')"
-                ></div>
-                <div
-                  v-for="i in Math.max(0, 100 - liveBlocks.length)"
-                  :key="'empty-' + i"
-                  class="w-3 h-3 rounded-sm bg-gray-300 dark:bg-gray-600"
-                  title="Loading..."
-                ></div>
-              </div>
-              <div class="flex items-center justify-between mt-2 text-[10px] text-gray-500 dark:text-gray-400">
-                <div class="flex items-center gap-3">
-                  <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-emerald-500"></span> Signed</span>
-                  <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-500"></span> Missed</span>
-                </div>
-                <span>{{ liveBlocks.length }}/100</span>
-              </div>
-            </div>
+          <!-- Right: Action Button -->
+          <div class="flex items-center lg:ml-auto">
             <button
               class="px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-emerald-600 text-white font-semibold hover:from-primary/90 hover:to-emerald-600/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
               @click="dialog.open('delegate', { validator_address: v.operator_address })"
@@ -402,6 +363,48 @@ const getUptimeColor = (value: number | null) => {
               <Icon icon="mdi:hand-coin" class="text-xl" />
               Delegate
             </button>
+          </div>
+        </div>
+        
+        <!-- Live Blocks Section - Responsive Grid -->
+        <div class="mt-6 pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <Icon icon="mdi:cube-outline" class="text-lg text-primary" />
+              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Block Signing History</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <span class="text-xs text-gray-500 dark:text-gray-400">Live</span>
+              <span class="text-xs text-gray-400 dark:text-gray-500 ml-2">{{ liveBlocks.length }}/100</span>
+            </div>
+          </div>
+          
+          <div v-if="loadingBlocks" class="grid grid-cols-20 sm:grid-cols-25 md:grid-cols-50 gap-[2px]">
+            <div
+              v-for="i in 100"
+              :key="i"
+              class="aspect-square rounded-[2px] bg-gray-200 dark:bg-gray-700 animate-pulse"
+            ></div>
+          </div>
+          <div v-else class="grid grid-cols-20 sm:grid-cols-25 md:grid-cols-50 gap-[2px]">
+            <div
+              v-for="(block, idx) in liveBlocks"
+              :key="block.height"
+              class="aspect-square rounded-[2px] transition-all duration-200 cursor-pointer hover:scale-150 hover:z-10"
+              :class="block.signed ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-red-500 hover:bg-red-400'"
+              :title="'#' + block.height + (block.signed ? ' Signed' : ' Missed')"
+            ></div>
+            <div
+              v-for="i in Math.max(0, 100 - liveBlocks.length)"
+              :key="'empty-' + i"
+              class="aspect-square rounded-[2px] bg-gray-200 dark:bg-gray-700"
+            ></div>
+          </div>
+          
+          <div class="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-[2px] bg-emerald-500"></span> Signed</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-[2px] bg-red-500"></span> Missed</span>
           </div>
         </div>
       </div>
