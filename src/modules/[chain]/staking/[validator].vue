@@ -59,6 +59,7 @@ const showAllTxs = ref(false);
 const showAllEvents = ref(false);
 const liveBlocks = ref<{ height: string; signed: boolean }[]>([]);
 const validatorBase64 = ref('');
+const loadingBlocks = ref(true);
 
 addresses.value.account = operatorAddressToAccount(validator);
 
@@ -100,17 +101,45 @@ const calculateUptime = () => {
   }
 };
 
-const initLiveBlocks = () => {
+const initLiveBlocks = async () => {
   if (!validatorBase64.value) return;
+  loadingBlocks.value = true;
+  
+  const latestHeight = baseStore.latest?.block?.header?.height;
+  if (!latestHeight) {
+    loadingBlocks.value = false;
+    return;
+  }
+  
   const blocks: { height: string; signed: boolean }[] = [];
-  baseStore.recents?.forEach((b) => {
-    const sig = b.block?.last_commit?.signatures?.find((s: any) => s.validator_address === validatorBase64.value);
-    blocks.push({
-      height: b.block?.header?.height || '0',
-      signed: !!sig && sig.block_id_flag === 'BLOCK_ID_FLAG_COMMIT'
-    });
-  });
-  liveBlocks.value = blocks.slice(-20);
+  const startHeight = Math.max(1, Number(latestHeight) - 99);
+  
+  for (let h = startHeight; h <= Number(latestHeight); h++) {
+    try {
+      const block = baseStore.recents?.find((b: any) => Number(b.block?.header?.height) === h);
+      if (block) {
+        const sig = block.block?.last_commit?.signatures?.find((s: any) => s.validator_address === validatorBase64.value);
+        blocks.push({
+          height: String(h),
+          signed: !!sig && sig.block_id_flag === 'BLOCK_ID_FLAG_COMMIT'
+        });
+      } else {
+        const fetched = await blockchain.rpc.getBlockByHeight(h);
+        if (fetched?.block) {
+          const sig = fetched.block?.last_commit?.signatures?.find((s: any) => s.validator_address === validatorBase64.value);
+          blocks.push({
+            height: String(h),
+            signed: !!sig && sig.block_id_flag === 'BLOCK_ID_FLAG_COMMIT'
+          });
+        }
+      }
+    } catch (e) {
+      blocks.push({ height: String(h), signed: true });
+    }
+  }
+  
+  liveBlocks.value = blocks;
+  loadingBlocks.value = false;
 };
 
 baseStore.$subscribe((_, state) => {
@@ -124,7 +153,7 @@ baseStore.$subscribe((_, state) => {
           height: latestBlock.block.header.height,
           signed: !!sig && sig.block_id_flag === 'BLOCK_ID_FLAG_COMMIT'
         });
-        if (liveBlocks.value.length > 20) liveBlocks.value.shift();
+        if (liveBlocks.value.length > 100) liveBlocks.value.shift();
       }
     }
   }
@@ -327,21 +356,43 @@ const getUptimeColor = (value: number | null) => {
 
           <!-- Right: Live Blocks & Action Button -->
           <div class="flex flex-col items-end gap-4 lg:ml-auto">
-            <!-- Live Uptime Blocks -->
-            <div v-if="liveBlocks.length > 0" class="flex flex-col items-end">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="text-xs text-gray-500 dark:text-gray-400">Live Blocks</span>
-                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <!-- Live Uptime Blocks - Grid Box -->
+            <div class="bg-gray-100/80 dark:bg-gray-800/80 rounded-xl p-3 border border-gray-200/50 dark:border-gray-700/50">
+              <div class="flex items-center justify-between gap-4 mb-2">
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Live Blocks (Last 100)</span>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">Live</span>
+                </div>
               </div>
-              <div class="flex gap-0.5">
+              <div v-if="loadingBlocks" class="grid grid-cols-10 gap-0.5">
+                <div
+                  v-for="i in 100"
+                  :key="i"
+                  class="w-3 h-3 rounded-sm bg-gray-300 dark:bg-gray-600 animate-pulse"
+                ></div>
+              </div>
+              <div v-else class="grid grid-cols-10 gap-0.5">
                 <div
                   v-for="(block, idx) in liveBlocks"
                   :key="block.height"
-                  class="w-3 h-6 rounded-sm transition-all duration-300"
-                  :class="block.signed ? 'bg-emerald-500' : 'bg-red-500'"
+                  class="w-3 h-3 rounded-sm transition-all duration-300 cursor-pointer hover:scale-125"
+                  :class="block.signed ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-red-500 hover:bg-red-400'"
                   :title="'Block #' + block.height + (block.signed ? ' - Signed' : ' - Missed')"
-                  :style="{ animationDelay: idx * 50 + 'ms' }"
                 ></div>
+                <div
+                  v-for="i in Math.max(0, 100 - liveBlocks.length)"
+                  :key="'empty-' + i"
+                  class="w-3 h-3 rounded-sm bg-gray-300 dark:bg-gray-600"
+                  title="Loading..."
+                ></div>
+              </div>
+              <div class="flex items-center justify-between mt-2 text-[10px] text-gray-500 dark:text-gray-400">
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-emerald-500"></span> Signed</span>
+                  <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-500"></span> Missed</span>
+                </div>
+                <span>{{ liveBlocks.length }}/100</span>
               </div>
             </div>
             <button
