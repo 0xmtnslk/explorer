@@ -1,0 +1,28 @@
+{
+    "chain_name": "DYDX",
+    "api": [
+        {
+            "address": "https://dydx-api.polkachu.com", 
+            "provider": "CoinHunters"
+        }
+    ], 
+    "rpc": [
+        {
+            "address": "https://dydx-rpc.polkachu.com", 
+            "provider": "CoinHunters"
+        }
+    ],
+    "sdk_version": "v0.50.5",
+    "coin_type": "118",
+    "min_tx_fee": "500",
+    "assets": [{
+        "base": "adydx",
+        "symbol": "DYDX",
+        "exponent": "18",
+        "coingecko_id": "dydx-ethdydx", 
+        "logo": "https://pbs.twimg.com/profile_images/1912020809238888448/1veICPNZ_400x400.jpg"
+    }],
+    "addr_prefix": "dydx",
+    "theme_color": "#ea4335",
+    "logo": "https://pbs.twimg.com/profile_images/1912020809238888448/1veICPNZ_400x400.jpg"
+}
