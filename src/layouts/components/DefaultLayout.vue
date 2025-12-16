@@ -75,17 +75,17 @@ const behind = computed(() => {
           </RouterLink>
 
           <!-- Navigation -->
-          <div v-if="blockchain.chainName" class="flex items-center gap-0.5 sm:gap-1">
+          <div v-if="blockchain.chainName" class="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             <RouterLink
               v-for="item in navItems"
               :key="item.title"
               :to="item.to"
-              class="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-primary transition-all"
+              class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-primary transition-all whitespace-nowrap"
               :class="{ '!bg-primary/10 !text-primary': $route.path === item.to || $route.path.startsWith(item.to + '/') }"
               :title="item.title"
             >
-              <Icon :icon="item.icon" class="text-base sm:text-lg" />
-              <span class="hidden xl:inline">{{ item.title }}</span>
+              <Icon :icon="item.icon" class="text-lg flex-shrink-0" />
+              <span>{{ item.title }}</span>
             </RouterLink>
           </div>
 

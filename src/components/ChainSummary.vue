@@ -29,6 +29,18 @@ const priceChange = computed(() => {
   return null;
 });
 
+const formatPrice = (val: number) => {
+  if (val >= 1) {
+    return val.toFixed(2);
+  } else if (val >= 0.01) {
+    return val.toFixed(4);
+  } else if (val >= 0.0001) {
+    return val.toFixed(6);
+  } else {
+    return val.toFixed(8);
+  }
+};
+
 const addFavor = (e: Event) => {
   e.stopPropagation();
   e.preventDefault();
@@ -78,7 +90,7 @@ const addFavor = (e: Event) => {
         </h3>
         <div class="flex items-center gap-2 mt-1">
           <span v-if="price" class="text-sm font-medium text-gray-600 dark:text-gray-300">
-            ${{ price.toFixed(2) }}
+            ${{ formatPrice(price) }}
           </span>
           <span 
             v-if="priceChange !== null" 
