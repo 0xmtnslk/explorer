@@ -239,8 +239,8 @@ function handleSearch() {
             </div>
           </div>
 
-          <!-- Center: Desktop Navigation (lg and above only) -->
-          <div v-if="blockchain.chainName" class="hidden lg:flex items-center gap-1 flex-1 justify-center">
+          <!-- Center: Desktop Navigation (md and above only) -->
+          <div v-if="blockchain.chainName" class="hidden md:flex items-center gap-1 flex-1 justify-center">
             <RouterLink
               v-for="item in navItems"
               :key="item.title"
@@ -253,8 +253,8 @@ function handleSearch() {
             </RouterLink>
           </div>
           
-          <!-- Spacer for mobile/tablet -->
-          <div class="flex-1 lg:hidden"></div>
+          <!-- Spacer for mobile -->
+          <div class="flex-1 md:hidden"></div>
 
           <!-- Right: Actions -->
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -303,11 +303,11 @@ function handleSearch() {
 
             <NavBarWallet />
 
-            <!-- Mobile Menu Button (below lg) -->
+            <!-- Mobile Menu Button (below md) -->
             <button 
               v-if="blockchain.chainName"
               @click.stop="toggleMobileMenu"
-              class="lg:hidden btn btn-ghost btn-circle btn-sm"
+              class="md:hidden btn btn-ghost btn-circle btn-sm"
             >
               <Icon :icon="mobileMenuOpen ? 'mdi:close' : 'mdi:menu'" class="text-xl text-gray-600 dark:text-gray-300" />
             </button>
@@ -317,7 +317,7 @@ function handleSearch() {
         <!-- Mobile Menu -->
         <div 
           v-if="mobileMenuOpen && blockchain.chainName"
-          class="lg:hidden border-t border-gray-200 dark:border-gray-700 py-3"
+          class="md:hidden border-t border-gray-200 dark:border-gray-700 py-3"
         >
           <div class="space-y-1">
             <RouterLink
