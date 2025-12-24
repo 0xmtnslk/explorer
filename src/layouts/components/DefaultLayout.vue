@@ -165,8 +165,8 @@ function handleSearch() {
     <!-- Top Navigation -->
     <nav class="sticky top-0 z-50 bg-white/80 dark:bg-[#1a1f2e]/90 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700/50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <!-- Logo -->
+        <div class="flex items-center h-16 gap-4">
+          <!-- Left: Logo -->
           <RouterLink to="/" class="flex items-center gap-3 group flex-shrink-0">
             <img 
               src="/logo.webp" 
@@ -181,8 +181,8 @@ function handleSearch() {
             </div>
           </RouterLink>
 
-          <!-- Chain Selector Button (when chain is selected) -->
-          <div v-if="blockchain.chainName" class="dropdown-container relative ml-4">
+          <!-- Chain Selector -->
+          <div v-if="blockchain.chainName" class="relative flex-shrink-0">
             <button 
               @click.stop="toggleChainSelector"
               class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -239,23 +239,22 @@ function handleSearch() {
             </div>
           </div>
 
-          <!-- Desktop Navigation -->
-          <div v-if="blockchain.chainName" class="hidden xl:flex items-center gap-1 ml-4 flex-1 justify-center">
+          <!-- Center: Desktop Navigation (always visible, responsive text) -->
+          <div v-if="blockchain.chainName" class="flex items-center gap-0.5 flex-1 justify-center">
             <RouterLink
               v-for="item in navItems"
               :key="item.title"
               :to="item.to"
-              class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-primary transition-all whitespace-nowrap"
+              class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-primary transition-all whitespace-nowrap"
               :class="{ '!bg-primary/10 !text-primary': $route.path === item.to || $route.path.startsWith(item.to + '/') }"
-              :title="item.title"
             >
-              <Icon :icon="item.icon" class="text-lg flex-shrink-0" />
-              <span>{{ item.title }}</span>
+              <Icon :icon="item.icon" class="text-sm sm:text-base" />
+              <span class="hidden sm:inline text-xs">{{ item.title }}</span>
             </RouterLink>
           </div>
 
-          <!-- Right Actions -->
-          <div class="flex items-center gap-1 sm:gap-2 ml-auto">
+          <!-- Right: Actions -->
+          <div class="flex items-center gap-2 flex-shrink-0">
             <ChainProfile class="hidden md:flex" />
             <NavBarI18n class="hidden md:block" />
             <NavbarThemeSwitcher />
@@ -301,11 +300,11 @@ function handleSearch() {
 
             <NavBarWallet />
 
-            <!-- Mobile Menu Button -->
+            <!-- Mobile Menu Button (only for very small screens) -->
             <button 
               v-if="blockchain.chainName"
               @click.stop="toggleMobileMenu"
-              class="xl:hidden btn btn-ghost btn-circle btn-sm"
+              class="sm:hidden btn btn-ghost btn-circle btn-sm"
             >
               <Icon :icon="mobileMenuOpen ? 'mdi:close' : 'mdi:menu'" class="text-xl text-gray-600 dark:text-gray-300" />
             </button>
@@ -315,7 +314,7 @@ function handleSearch() {
         <!-- Mobile Menu -->
         <div 
           v-if="mobileMenuOpen && blockchain.chainName"
-          class="xl:hidden border-t border-gray-200 dark:border-gray-700 py-3 dropdown-container"
+          class="sm:hidden border-t border-gray-200 dark:border-gray-700 py-3"
         >
           <div class="space-y-1">
             <RouterLink
