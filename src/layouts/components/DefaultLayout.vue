@@ -29,6 +29,7 @@ const searchQuery = ref('');
 const searchError = ref('');
 const allMainnetChains = ref<ChainConfig[]>([]);
 const allTestnetChains = ref<ChainConfig[]>([]);
+const chainSearchQuery = ref('');
 
 blockchain.$subscribe((m, s) => {
   if (current.value === s.chainName && temp.value != s.endpoint.address) {
@@ -71,7 +72,13 @@ const behind = computed(() => {
 });
 
 const displayedChains = computed(() => {
-  return selectedNetworkType.value === 'mainnet' ? allMainnetChains.value : allTestnetChains.value;
+  const chains = selectedNetworkType.value === 'mainnet' ? allMainnetChains.value : allTestnetChains.value;
+  const query = chainSearchQuery.value.toLowerCase().trim();
+  if (!query) return chains;
+  return chains.filter(c => 
+    (c.prettyName || c.chainName).toLowerCase().includes(query) ||
+    c.chainName.toLowerCase().includes(query)
+  );
 });
 
 function selectChain(chainName: string) {
@@ -85,6 +92,7 @@ function toggleNetworkDropdown() {
 
 function closeDropdown() {
   networkDropdownOpen.value = false;
+  chainSearchQuery.value = '';
 }
 
 function handleSearch() {
@@ -202,6 +210,19 @@ function handleSearch() {
                     >
                       Testnet ({{ allTestnetChains.length }})
                     </button>
+                  </div>
+
+                  <!-- Chain Search -->
+                  <div class="p-2 border-b border-gray-200 dark:border-gray-700">
+                    <div class="relative">
+                      <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                      <input 
+                        v-model="chainSearchQuery"
+                        type="text"
+                        :placeholder="selectedNetworkType === 'mainnet' ? 'Search mainnet chains...' : 'Search testnet chains...'"
+                        class="w-full pl-9 pr-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-lg focus:ring-2 focus:ring-primary/50 text-gray-700 dark:text-gray-300 placeholder-gray-400"
+                      />
+                    </div>
                   </div>
                   
                   <!-- Chain List -->
