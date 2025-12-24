@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { Icon } from '@iconify/vue';
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref } from 'vue';
 
 import newFooter from '@/layouts/components/NavFooter.vue';
 import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue';
@@ -151,24 +151,17 @@ function handleSearch() {
   }
 }
 
-function handleClickOutside(event: MouseEvent) {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.dropdown-container')) {
-    closeAllDropdowns();
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
 </script>
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#0f1318] dark:to-[#1a1f2e]">
+    <!-- Overlay for closing dropdowns -->
+    <div 
+      v-if="mobileMenuOpen || chainSelectorOpen || searchOpen"
+      class="fixed inset-0 z-40"
+      @click="closeAllDropdowns"
+    />
+    
     <!-- Top Navigation -->
     <nav class="sticky top-0 z-50 bg-white/80 dark:bg-[#1a1f2e]/90 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700/50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
