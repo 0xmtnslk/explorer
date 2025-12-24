@@ -247,7 +247,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Desktop Navigation -->
-          <div v-if="blockchain.chainName" class="hidden lg:flex items-center gap-1 ml-4 overflow-x-auto scrollbar-hide">
+          <div v-if="blockchain.chainName" class="hidden xl:flex items-center gap-1 ml-4 flex-1 justify-center">
             <RouterLink
               v-for="item in navItems"
               :key="item.title"
@@ -312,7 +312,7 @@ onUnmounted(() => {
             <button 
               v-if="blockchain.chainName"
               @click.stop="toggleMobileMenu"
-              class="lg:hidden btn btn-ghost btn-circle btn-sm"
+              class="xl:hidden btn btn-ghost btn-circle btn-sm"
             >
               <Icon :icon="mobileMenuOpen ? 'mdi:close' : 'mdi:menu'" class="text-xl text-gray-600 dark:text-gray-300" />
             </button>
@@ -322,7 +322,7 @@ onUnmounted(() => {
         <!-- Mobile Menu -->
         <div 
           v-if="mobileMenuOpen && blockchain.chainName"
-          class="lg:hidden border-t border-gray-200 dark:border-gray-700 py-3 dropdown-container"
+          class="xl:hidden border-t border-gray-200 dark:border-gray-700 py-3 dropdown-container"
         >
           <div class="space-y-1">
             <RouterLink
