@@ -239,19 +239,22 @@ function handleSearch() {
             </div>
           </div>
 
-          <!-- Center: Desktop Navigation (always visible, responsive text) -->
-          <div v-if="blockchain.chainName" class="flex items-center gap-0.5 flex-1 justify-center">
+          <!-- Center: Desktop Navigation (lg and above only) -->
+          <div v-if="blockchain.chainName" class="hidden lg:flex items-center gap-1 flex-1 justify-center">
             <RouterLink
               v-for="item in navItems"
               :key="item.title"
               :to="item.to"
-              class="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-primary transition-all whitespace-nowrap"
+              class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-primary transition-all whitespace-nowrap"
               :class="{ '!bg-primary/10 !text-primary': $route.path === item.to || $route.path.startsWith(item.to + '/') }"
             >
-              <Icon :icon="item.icon" class="text-sm sm:text-base" />
-              <span class="hidden sm:inline text-xs">{{ item.title }}</span>
+              <Icon :icon="item.icon" class="text-lg" />
+              <span>{{ item.title }}</span>
             </RouterLink>
           </div>
+          
+          <!-- Spacer for mobile/tablet -->
+          <div class="flex-1 lg:hidden"></div>
 
           <!-- Right: Actions -->
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -300,11 +303,11 @@ function handleSearch() {
 
             <NavBarWallet />
 
-            <!-- Mobile Menu Button (only for very small screens) -->
+            <!-- Mobile Menu Button (below lg) -->
             <button 
               v-if="blockchain.chainName"
               @click.stop="toggleMobileMenu"
-              class="sm:hidden btn btn-ghost btn-circle btn-sm"
+              class="lg:hidden btn btn-ghost btn-circle btn-sm"
             >
               <Icon :icon="mobileMenuOpen ? 'mdi:close' : 'mdi:menu'" class="text-xl text-gray-600 dark:text-gray-300" />
             </button>
@@ -314,7 +317,7 @@ function handleSearch() {
         <!-- Mobile Menu -->
         <div 
           v-if="mobileMenuOpen && blockchain.chainName"
-          class="sm:hidden border-t border-gray-200 dark:border-gray-700 py-3"
+          class="lg:hidden border-t border-gray-200 dark:border-gray-700 py-3"
         >
           <div class="space-y-1">
             <RouterLink
