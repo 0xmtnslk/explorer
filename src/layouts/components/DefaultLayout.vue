@@ -120,47 +120,56 @@ function handleSearch() {
       <div class="border-b border-gray-200 dark:border-gray-700/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between h-16">
-            <!-- Left: Logo + Current Chain -->
-            <div class="flex items-center gap-4">
-              <!-- Logo -->
-              <RouterLink to="/" class="flex items-center gap-2 group">
+            <!-- Left: Logo -->
+            <div class="flex items-center gap-3">
+              <RouterLink to="/" class="flex items-center gap-2 group flex-shrink-0">
                 <img 
                   src="/logo.webp" 
                   alt="CoinHunters" 
                   class="w-9 h-9 rounded-full ring-2 ring-primary/30 group-hover:ring-primary transition-all"
                 />
-                <span class="hidden sm:block text-lg font-bold text-gray-800 dark:text-white">
+                <span class="hidden lg:block text-lg font-bold text-gray-800 dark:text-white">
                   CoinHunters
                 </span>
               </RouterLink>
+            </div>
 
-              <!-- Divider -->
-              <div class="hidden md:block w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
+            <!-- Center: Search Bar -->
+            <div class="flex-1 flex justify-center px-4">
+              <div class="relative w-full max-w-md">
+                <Icon icon="mdi:magnify" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input 
+                  v-model="searchQuery"
+                  @keyup.enter="handleSearch"
+                  type="text"
+                  placeholder="Search Block / Tx / Address"
+                  class="w-full pl-11 pr-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary text-gray-700 dark:text-gray-300 placeholder-gray-400 transition-all"
+                />
+                <div v-if="searchError" class="absolute top-full left-0 mt-1 text-xs text-red-500 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">{{ searchError }}</div>
+              </div>
+            </div>
 
+            <!-- Right: Chain Selector + Actions -->
+            <div class="flex items-center gap-3">
               <!-- Current Chain Selector -->
               <div class="relative">
                 <button 
                   @click="toggleNetworkDropdown"
-                  class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                  class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-gray-200 dark:border-gray-700"
                 >
                   <img 
                     v-if="blockchain.current?.logo" 
                     :src="blockchain.current.logo" 
-                    class="w-7 h-7 rounded-full"
+                    class="w-6 h-6 rounded-full"
                     :alt="blockchain.current?.prettyName"
                   />
-                  <div v-else class="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                    <Icon icon="mdi:cube-outline" class="text-sm text-gray-500" />
+                  <div v-else class="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                    <Icon icon="mdi:cube-outline" class="text-xs text-gray-500" />
                   </div>
-                  <div class="hidden sm:block text-left">
-                    <div class="text-sm font-semibold text-gray-800 dark:text-white leading-tight">
-                      {{ blockchain.current?.prettyName || 'Select Network' }}
-                    </div>
-                    <div class="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
-                      {{ blockchain.current?.networkType === 'testnet' ? 'Testnet' : 'Mainnet' }}
-                    </div>
-                  </div>
-                  <Icon :icon="networkDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'" class="text-gray-400 text-lg" />
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-200 max-w-[120px] truncate">
+                    {{ blockchain.current?.prettyName || 'Select Network' }}
+                  </span>
+                  <Icon :icon="networkDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'" class="text-gray-400" />
                 </button>
 
                 <!-- Backdrop -->
@@ -217,25 +226,8 @@ function handleSearch() {
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Center: Search Bar -->
-            <div class="hidden md:flex items-center flex-1 justify-center max-w-md mx-8">
-              <div class="relative w-full">
-                <Icon icon="mdi:magnify" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input 
-                  v-model="searchQuery"
-                  @keyup.enter="handleSearch"
-                  type="text"
-                  placeholder="Search by Block / Tx Hash / Address"
-                  class="w-full pl-11 pr-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary text-gray-700 dark:text-gray-300 placeholder-gray-400 transition-all"
-                />
-                <div v-if="searchError" class="absolute top-full left-0 mt-1 text-xs text-red-500 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">{{ searchError }}</div>
-              </div>
-            </div>
-
-            <!-- Right: Actions -->
-            <div class="flex items-center gap-3">
+              <!-- Theme & Wallet -->
               <NavbarThemeSwitcher />
               <NavBarWallet />
             </div>
