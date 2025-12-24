@@ -5,14 +5,11 @@ import { useRouter } from 'vue-router';
 
 import newFooter from '@/layouts/components/NavFooter.vue';
 import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue';
-import ChainProfile from '@/layouts/components/ChainProfile.vue';
-import { onMounted, onUnmounted } from 'vue';
 
 import { useDashboard } from '@/stores/useDashboard';
 import { NetworkType } from '@/types/chaindata';
 import { useBaseStore, useBlockchain } from '@/stores';
 
-import NavBarI18n from './NavBarI18n.vue';
 import NavBarWallet from './NavBarWallet.vue';
 import dayjs from 'dayjs';
 
@@ -61,13 +58,19 @@ const behind = computed(() => {
 
 const mainnetChains = computed(() => {
   return Object.values(dashboard.chains)
-    .filter(c => c.networkType === NetworkType.Mainnet || c.networkType === 'mainnet')
+    .filter(c => {
+      const nt = String(c.networkType || '').toLowerCase();
+      return nt === 'mainnet' || nt === NetworkType.Mainnet;
+    })
     .sort((a, b) => (a.prettyName || a.chainName).localeCompare(b.prettyName || b.chainName));
 });
 
 const testnetChains = computed(() => {
   return Object.values(dashboard.chains)
-    .filter(c => c.networkType === NetworkType.Testnet || c.networkType === 'testnet')
+    .filter(c => {
+      const nt = String(c.networkType || '').toLowerCase();
+      return nt === 'testnet' || nt === NetworkType.Testnet;
+    })
     .sort((a, b) => (a.prettyName || a.chainName).localeCompare(b.prettyName || b.chainName));
 });
 
@@ -118,7 +121,7 @@ function handleSearch() {
     <!-- Top Navigation -->
     <nav class="sticky top-0 z-50 bg-white/80 dark:bg-[#1a1f2e]/90 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700/50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
+        <div class="flex items-center h-16 gap-4">
           <!-- Logo -->
           <RouterLink to="/" class="flex items-center gap-3 group flex-shrink-0">
             <img 
@@ -134,8 +137,41 @@ function handleSearch() {
             </div>
           </RouterLink>
 
+          <!-- Navigation Menu (Desktop) -->
+          <div v-if="blockchain.chainName" class="hidden lg:flex items-center gap-1">
+            <RouterLink
+              v-for="item in navItems"
+              :key="item.title"
+              :to="item.to"
+              class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-primary transition-all whitespace-nowrap"
+              :class="{ '!bg-primary/10 !text-primary': $route.path === item.to || $route.path.startsWith(item.to + '/') }"
+              :title="item.title"
+            >
+              <Icon :icon="item.icon" class="text-lg flex-shrink-0" />
+              <span>{{ item.title }}</span>
+            </RouterLink>
+          </div>
+
+          <!-- Spacer -->
+          <div class="flex-1"></div>
+
+          <!-- Search Bar -->
+          <div class="flex items-center w-48 lg:w-64">
+            <div class="relative w-full">
+              <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                v-model="searchQuery"
+                @keyup.enter="handleSearch"
+                type="text"
+                placeholder="Block / Tx / Address"
+                class="w-full pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 border-0 rounded-xl focus:ring-2 focus:ring-primary/50 text-gray-700 dark:text-gray-300 placeholder-gray-400"
+              />
+              <div v-if="searchError" class="absolute top-full left-0 mt-1 text-xs text-red-500">{{ searchError }}</div>
+            </div>
+          </div>
+
           <!-- Network Dropdown -->
-          <div class="relative ml-4">
+          <div class="relative flex-shrink-0">
             <button 
               @click="toggleNetworkDropdown"
               class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
@@ -147,8 +183,8 @@ function handleSearch() {
                 :alt="blockchain.current?.prettyName"
               />
               <Icon v-else icon="mdi:cube-outline" class="text-lg text-gray-500" />
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:inline max-w-[100px] truncate">
-                {{ blockchain.current?.prettyName || 'Select Network' }}
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:inline max-w-[80px] truncate">
+                {{ blockchain.current?.prettyName || 'Network' }}
               </span>
               <Icon :icon="networkDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'" class="text-gray-500" />
             </button>
@@ -159,7 +195,7 @@ function handleSearch() {
             <!-- Dropdown Menu -->
             <div 
               v-if="networkDropdownOpen" 
-              class="absolute left-0 top-full mt-2 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+              class="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
             >
               <!-- Network Type Tabs -->
               <div class="flex border-b border-gray-200 dark:border-gray-700">
@@ -199,40 +235,8 @@ function handleSearch() {
             </div>
           </div>
 
-          <!-- Navigation -->
-          <div v-if="blockchain.chainName" class="hidden lg:flex items-center gap-1 mx-4">
-            <RouterLink
-              v-for="item in navItems"
-              :key="item.title"
-              :to="item.to"
-              class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-primary transition-all whitespace-nowrap"
-              :class="{ '!bg-primary/10 !text-primary': $route.path === item.to || $route.path.startsWith(item.to + '/') }"
-              :title="item.title"
-            >
-              <Icon :icon="item.icon" class="text-lg flex-shrink-0" />
-              <span class="hidden xl:inline">{{ item.title }}</span>
-            </RouterLink>
-          </div>
-
-          <!-- Search Bar -->
-          <div class="hidden md:flex items-center flex-1 max-w-xs mx-4">
-            <div class="relative w-full">
-              <Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                v-model="searchQuery"
-                @keyup.enter="handleSearch"
-                type="text"
-                placeholder="Block / Tx / Address"
-                class="w-full pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 border-0 rounded-xl focus:ring-2 focus:ring-primary/50 text-gray-700 dark:text-gray-300 placeholder-gray-400"
-              />
-              <div v-if="searchError" class="absolute top-full left-0 mt-1 text-xs text-red-500">{{ searchError }}</div>
-            </div>
-          </div>
-
           <!-- Right Actions -->
           <div class="flex items-center gap-2 flex-shrink-0">
-            <ChainProfile class="hidden md:flex" />
-            <NavBarI18n class="hidden lg:block" />
             <NavbarThemeSwitcher />
             <NavBarWallet />
           </div>
