@@ -205,16 +205,23 @@ export const useDashboard = defineStore('dashboard', {
       if (window.location.hostname.search('testnet') > -1) {
         this.networkType = NetworkType.Testnet;
       }
-      const source: Record<string, LocalChainConfig> =
-        this.networkType === NetworkType.Mainnet
-          ? import.meta.glob('../../chains/mainnet/*.json', { eager: true })
-          : import.meta.glob('../../chains/testnet/*.json', { eager: true });
-      Object.values<LocalChainConfig>(source).forEach((x: LocalChainConfig) => {
+      
+      const mainnetSource: Record<string, LocalChainConfig> = import.meta.glob('../../chains/mainnet/*.json', { eager: true });
+      Object.values<LocalChainConfig>(mainnetSource).forEach((x: LocalChainConfig) => {
         this.chains[x.chain_name] = convertFromLocal(x);
         if (!this.chains[x.chain_name].networkType) {
-          this.chains[x.chain_name].networkType = this.networkType.toString().toLowerCase();
+          this.chains[x.chain_name].networkType = 'mainnet';
         }
       });
+      
+      const testnetSource: Record<string, LocalChainConfig> = import.meta.glob('../../chains/testnet/*.json', { eager: true });
+      Object.values<LocalChainConfig>(testnetSource).forEach((x: LocalChainConfig) => {
+        this.chains[x.chain_name] = convertFromLocal(x);
+        if (!this.chains[x.chain_name].networkType) {
+          this.chains[x.chain_name].networkType = 'testnet';
+        }
+      });
+      
       this.setupDefault();
       this.status = LoadingStatus.Loaded;
     },
